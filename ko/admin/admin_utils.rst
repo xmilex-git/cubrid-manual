@@ -600,7 +600,7 @@ copydb
   -i, --control-file=FILE         여러 개의 볼륨들이 각각 저장되는 디렉터리 경로를 지정하는 제어 파일
   -r, --replace                   같은 이름의 데이터베이스가 존재하면 덮어쓰기
   -d, --delete-source             복사 후 원본 데이터베이스 삭제
-      --copy-lob-path=PATH        원본 데이터베이스의 LOB 파일 디렉터리 경로를 복사
+      --copy-lob-path             원본 데이터베이스의 LOB 대렉터리 경로를 복사. -B 옵션과 함께 사용 불가. 기본값: 복사하지 않음
   -B, --lob-base-path=PATH        LOB 파일이 저장되는 디렉토리 경로
 
 
@@ -660,11 +660,11 @@ copydb
 
         cubrid copydb -d -F /home/usr/CUBRID/databases demodb new_demodb
 
-.. option:: --copy-lob-path=PATH
+.. option:: --copy-lob-path
 
-    원본 데이터베이스에 대한 **LOB** 파일 디렉터리 경로를 새로운 데이터베이스의 **LOB** 파일 경로로 복사하고, 원본 데이터베이스를 복사한다. 이 옵션을 생략하면, **LOB** 파일 디렉터리 경로를 복사하지 않으므로, **databases.txt** 파일의 **lob-base-path** 항목을 별도로 수정해야 한다. 이 옵션은 **-B** 옵션과 병행할 수 없다. ::
+    이 옵션을 선택하면 대상 데이터베이스의 lob 디렉터리의 위치를 원본 데이터베이스의 lob 디렉토리의 위치와 동일하게 설정한다. 이 옵션이 생력되면 <대상 데이터베이스 디렉토리>/lob 이 대상 데이터베이스의 lob 디렉터리 경로로 설정된다. 이 옵션은 lob 파일을 복사하는 기능이 아니며 **-B** 옵션과 병행할 수 없다. ::
 
-        cubrid copydb --copy-lob-path=/home/usr/CUBRID/databases/new_demodb/lob demodb new_demodb
+        cubrid copydb --copy-lob-path demodb new_demodb
 
 .. option:: -B, --lob-base-path=PATH
 

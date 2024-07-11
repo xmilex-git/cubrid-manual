@@ -606,7 +606,7 @@ The following shows [options] available with the **cubrid copydb** utility.
   -i, --control-file=FILE         copying volumes over several locations written in the control file
   -r, --replace                   replace an existing database
   -d, --delete-source             delete a source database
-      --copy-lob-path=PATH        copy external storage PATH for LOB data from source database
+      --copy-lob-path             copy external storage PATH for LOB data from the source database. By default, the LOB path is not copied
   -B, --lob-base-path=PATH        base directory PATH for external LOB data
 
 
@@ -666,9 +666,9 @@ The following shows [options] available with the **cubrid copydb** utility.
 
         cubrid copydb -d -F /home/usr/CUBRID/databases demodb new_demodb
 
-.. option:: --copy-lob-path=PATH
+.. option:: --copy-lob-path
 
-    If the **\-\-copy-lob-path** option is specified, a new directory path for LOB files is created and a source database is copied into a new directory path. If this option is omitted, the directory path is not created. Therefore, the **lob-base-path** of the **databases.txt** file should be modified separately. This option cannot be used with the **-B** option. ::
+    If the **\-\-copy-lob-path** option is specified, the lob directory path of the target database will be set to the lob directory path of the source database. If this option is omitted, the lob directory path of the target database will be set to <target database directory path>/lob. This option does not copy lob files and cannot be used with the **-B** option. ::
 
         cubrid copydb --copy-lob-path demodb new_demodb
 
