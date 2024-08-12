@@ -142,6 +142,8 @@ On the below table, if "Applied" is "server parameter", that parameter affects t
 |                               +-------------------------------------+-------------------------+---------+----------+--------------------------------+-----------------------+
 |                               | max_hash_list_scan_size             | server parameter        |         | byte     | 8,388,608(8M)                  |                       |
 |                               +-------------------------------------+-------------------------+---------+----------+--------------------------------+-----------------------+
+|                               | max_subquery_cache_size             | server parameter        |         | byte     | 2,097,152(2M)                  | DBA only              |
+|                               +-------------------------------------+-------------------------+---------+----------+--------------------------------+-----------------------+
 |                               | sort_buffer_size                    | server parameter        |         | byte     | 128 *                          |                       |
 |                               |                                     |                         |         |          | :ref:`db_page_size <dpg>`      |                       |
 |                               +-------------------------------------+-------------------------+---------+----------+--------------------------------+-----------------------+
@@ -674,6 +676,8 @@ The following are parameters related to the memory used by the database server o
 +--------------------------------+--------+---------------------------+---------------------------+---------------------------+
 | max_hash_list_scan_size        | byte   | 8,388,608(8M)             | 0                         | 128MB                     |
 +--------------------------------+--------+---------------------------+---------------------------+---------------------------+
+| max_subquery_cache_size        | byte   | 2,097,152(2M)             | 0                         | 16,777,216(16M)           |
++--------------------------------+--------+---------------------------+---------------------------+---------------------------+
 | sort_buffer_size               | byte   | 128 *                     | 1 *                       | 2G(32bit),                |
 |                                |        | :ref:`db_page_size <dpg>` | :ref:`db_page_size <dpg>` | INT_MAX *                 |
 |                                |        |                           |                           | :ref:`db_page_size <dpg>` |
@@ -713,6 +717,12 @@ The following are parameters related to the memory used by the database server o
     **max_hash_list_scan_size** is a parameter to configure the maximum memory per transaction allocated for building hash table in a query containing subquerys. The default is 8MB, the minimum size is 0, and the maximum size is 128MB.
 
     If this parameter is set to 0 or If :ref:`NO_HASH_LIST_SCAN <no-hash-list-scan>` hint is specified, hash list scan will not be used.
+
+**max_subquery_cache_size**
+
+    **max_subquery_cache_size** is a parameter used to set the size of the subquery cache (correlated). You can set a unit as B, K or M, which stand for bytes, kilobytes (KB), and megabytes (MB), respectively. If you omit the unit, bytes will be applied. The default value is **2,097,152** (2M) bytes, the minimum value is **0**, and the maximum value is **16,777,216** (16M) bytes. The subquery cache is allocated for the number of subqueries in a query and is deallocated when the main query is completed. 
+    
+    If max_subquery_cache_size is set to 0, the :ref:`NO_SUBQUERY_CACHE <correlated-subquery-cache>` hint is specified, or there is insufficient memory space, the subquery cache optimization is not enabled.
 
 **sort_buffer_size**
 
