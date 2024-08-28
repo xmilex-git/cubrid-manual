@@ -666,9 +666,14 @@ For details, see :ref:`log-multiplexing`.
 
 **ha_copy_log_base**
 
-**ha_copy_log_base** is a parameter used to configure the location of storing the transaction log copy. The default is **$CUBRID_DATABASES**/\ *<db_name>*\_\ *<host_name>*.
+Specifies the parent path for saving replication logs. The default value is the directory path set in the $CUBRID_DATABASES environment variable.
+Replication logs are stored in a subdirectory of <db_name>_<host_name>, depending on the server and database name.
 
-For details, see :ref:`log-multiplexing`.
+The replication log path can be set to either a relative or absolute path.
+The following are examples of each setting.
+
+ex1) ha_copy_log_base=copylog: Considered a relative path and stores replication logs in $CUBRID_DATABASES/copylog.
+ex2) ha_copy_log_base=/log/copy_log: Saves replication logs in /log/copy_log as an absolute path.
 
 .. _ha_copy_log_max_archives:
 
@@ -3184,13 +3189,14 @@ Now let's see the case of rebuilding a existing slave node during a service in a
             [nodeB]$ rm testdb/log/*
             
             [nodeB]$ rm -rf testdb_nodeA
+            [nodeB]$ rm $CUBRID/var/APPLYLOGDB/testdb
             
     *   Stop log replication processes of *nodeB* on *nodeA* and *nodeC*.
     
         ::
         
-            [nodeA]$ cubrid heartbeat repl stop testdb nodeB
-            [nodeC]$ cubrid heartbeat repl stop testdb nodeB
+            [nodeA]$ cubrid heartbeat repl stop nodeB
+            [nodeC]$ cubrid heartbeat repl stop nodeB
     
     *   Remove replication logs for *nodeB* from *nodeA* and *nodeC*.
     
@@ -3199,18 +3205,9 @@ Now let's see the case of rebuilding a existing slave node during a service in a
             [nodeA]$ rm -rf $CUBRID_DATABASES/testdb_nodeB
             [nodeC]$ rm -rf $CUBRID_DATABASES/testdb_nodeB
 
-2.  Remove HA catalog table's data, restore *nodeB*'s database from *nodeA*'s backup, and add data to HA catalog table.
+2.  Restore *nodeB*'s database from *nodeA*'s backup, and add data to HA catalog table.
 
-    *   Delete the HA catalog table, db_ha_apply_info's records.
-    
-        Delete all records of db_ha_apply_info of *nodeB* to initialize.
-        
-        ::
-        
-            [nodeB]$ csql --sysadm --write-on-standby -u dba -S testdb 
-            csql> DELETE FROM db_ha_apply_info;
-            
-        Delete db_ha_apply_info data for *nodeB* from *nodeA* and *nodeC*.
+    *    Delete db_ha_apply_info data for *nodeB* from *nodeA* and *nodeC*.
         
         ::
         

@@ -666,9 +666,13 @@ CUBRID는 1시간 주기로 **ha_ping_hosts**\에 명시된 호스트를 점검�
 
 **ha_copy_log_base**
 
-복제 로그를 저장할 위치를 지정한다. 기본값은 **$CUBRID_DATABASES**/\ *<db_name>*\_\ *<host_name>*\ 이다.
+복제 로그를 저장할 상위 경로를 지정한다. 기본값은 $CUBRID_DATABASES 환경 변수에 설정된 디렉토리 경로이다.  복제 로그들은 서버와 데이터베이스명에 따라  <db_name>_<host_name>의 하위 디렉토리에 저장된다.
 
-자세한 내용은 :ref:`log-multiplexing`\ 를 참고한다.
+복제 로그 경로는 상대 경로 또는 절대 경로 설정이 가능하다. 
+다음은 각각의 설정 예제이다.
+
+예1) ha_copy_log_base=copylog : 상대 경로로 간주되어, 복제 로그 경로로 $CUBRID_DATABASES/copylog가 설정된다.
+예2) ha_copy_log_base=/log/copy_log : 절대 경로로 간주되어, 복제 로그 경로로 /log/copy_log copylog base가 설정된다.
 
 .. _ha_copy_log_max_archives:
 
@@ -3181,13 +3185,14 @@ HA 서비스 운영 중 슬레이브를 새로 추가하려면 기존의 마스�
             [nodeB]$ rm testdb/log/*
             
             [nodeB]$ rm -rf testdb_nodeA
+            [nodeB]$ rm $CUBRID/var/APPLYLOGDB/testdb
             
     *   *nodeA*\, *nodeC*\에서 *nodeB*\의 로그 복제 정지
     
         ::
         
-            [nodeA]$ cubrid heartbeat repl stop testdb nodeB
-            [nodeC]$ cubrid heartbeat repl stop testdb nodeB
+            [nodeA]$ cubrid heartbeat repl stop nodeB
+            [nodeC]$ cubrid heartbeat repl stop nodeB
     
     *   *nodeA*\, *nodeC*\에서 *nodeB*\에 대한 복제 로그 삭제
     
@@ -3196,17 +3201,8 @@ HA 서비스 운영 중 슬레이브를 새로 추가하려면 기존의 마스�
             [nodeA]$ rm -rf $CUBRID_DATABASES/testdb_nodeB
             [nodeC]$ rm -rf $CUBRID_DATABASES/testdb_nodeB
 
-2.  HA 카탈로그 테이블 삭제, *nodeA*\의 백업 및 *nodeB*\의 복구, HA 카탈로그 테이블에 정보 추가
+2.  *nodeA*\의 백업 및 *nodeB*\의 복구, HA 카탈로그 테이블에 정보 추가
 
-    *   HA 카탈로그 테이블인 db_ha_apply_info의 레코드 삭제
-    
-        *nodeB*\의 db_ha_apply_info 정보를 모두 삭제하여 초기화한다.
-        
-        ::
-        
-            [nodeB]$ csql --sysadm -u dba -S testdb 
-            csql> DELETE FROM db_ha_apply_info;
-            
         *nodeA*, *nodeC*\에서 *nodeB*\에 대한 db_ha_apply_info 정보를 삭제한다.
         
         ::
