@@ -1394,6 +1394,57 @@ CUBRID HA 그룹 정보와 CUBRID HA 구성 요소의 정보를 확인할 수 �
        Copylogdb testdb@nodeA:/home/cubrid/DB/testdb_nodeA (pid 2505, state registered)
        Server testdb (pid 2393, state registered_and_standby)
 
+
+-v의 경우, 해당노드의 상세정보를 출력한다.
+* score는 노드의 우선순위를 나타내며, 낮을 수록 높은 우선순위를 가진다.
+* missed heartbeat은 서로의 노드를 인식하는 heartbeat의 유실율을 나타내며, 해당 값이 높은 경우 환경설정/네트워크/방화벽 등을 점검해야 한다.
+
+Applylogdb, Copylogdb, Server 프로세스에 이벤트 발생 시간이며,이벤트가 발생하지 않은 경우 00:00:00.000으로 표기된다.
+
+* registered-time : 명령어를 통하여 프로세스 구동 요청 시간
+* deregistered-time : 명령어를 통하여 원격 프로세스 정지 요청 시간 (copylogdb와 applylogdb만 해당)
+* shutdown-time : HA 매니저(cub_master)가 프로세스를 정지한 시간
+* start-time : HA 매니저(cub_master)가 프로세스를 재 구동시간 
+
+**예시** 
+
+::
+
+    $ cubrid heartbeat status -v
+    @ cubrid heartbeat status
+
+    HA-Node Info (current cubrid1, state master)
+      Node cubrid2 (priority 2, state slave)
+        - score 2
+        - missed heartbeat 0
+      Node cubrid1 (priority 1, state master)
+        - score -32767
+        - missed heartbeat 0
+        
+    HA-Process Info (master 7392, state master)
+    Copylogdb testdb@cubrid2:/home/cubha/CUBRID-11.3.1.1142-bee7aa8-Linux.x86_64/databases/testdb_cubrid2 (pid 7841, state registered)
+     - exec-path [/home/cubha/CUBRID-11.3.1.1142-bee7aa8-Linux.x86_64/bin/cub_admin]
+     - argv      [cub_admin copylogdb -L /home/cubha/CUBRID-11.3.1.1142-bee7aa8-Linux.x86_64/databases/testdb_cubrid2 -m sync testdb@bagus2 ]
+     - registered-time   08/26/24 14:28:37.019
+     - deregistered-time 00/00/00 00:00:00.000
+     - shutdown-time     08/26/24 14:28:35.010
+     - start-time        08/26/24 14:28:36.012
+    Applylogdb testdb@localhost:/home/cubha/CUBRID-11.3.1.1142-bee7aa8-Linux.x86_64/databases/testdb_cubrid2 (pid 7746, state registered)
+     - exec-path [/home/cubha/CUBRID-11.3.1.1142-bee7aa8-Linux.x86_64/bin/cub_admin]
+     - argv      [cub_admin applylogdb -L /home/cubha/CUBRID-11.3.1.1142-bee7aa8-Linux.x86_64/databases/testdb_cubrid2 --max-mem-size=300 testdb@localhost ]
+     - registered-time   08/26/24 14:27:14.566
+     - deregistered-time 00/00/00 00:00:00.000
+     - shutdown-time     08/26/24 14:27:12.552
+     - start-time        08/26/24 14:27:13.558
+    Server testdb (pid 7904, state registered_and_active)
+     - exec-path [/home/cubha/CUBRID-11.3.1.1142-bee7aa8-Linux.x86_64/bin/cub_server]
+     - argv      [cub_server testdb ]
+     - registered-time   08/26/24 14:29:28.955
+     - deregistered-time 00/00/00 00:00:00.000
+     - shutdown-time     08/26/24 14:29:27.593
+     - start-time        08/26/24 14:29:28.594
+
+
 .. note:: CUBRID 9.0 미만 버전에서 사용되었던 **act**, **deact**, **deregister** 명령은 더 이상 사용되지 않는다.
 
 .. _cubrid-service-util:
