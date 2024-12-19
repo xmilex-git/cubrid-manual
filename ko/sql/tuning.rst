@@ -1,7 +1,7 @@
-CREATE TABLE t (a INT, b INT);
 :meta-keywords: cubrid update statistics, cubrid check statistics, query plan, query profiling, sql hint, cubrid index hint, cubrid special index, cubrid using index
 :meta-description: How to optimize query execution in CUBRID database.
 
+.. include:: join_method.inc
 
 통계 정보 갱신
 ==============
@@ -265,6 +265,7 @@ CSQL에서 ";plan detail" 명령 입력 또는 "SET OPTIMIZATION LEVEL 513;"을 
     *   nl-join: 중첩 루프 조인, Nested loop join
     *   m-join: 정렬 병합 조인, Sort merge join
     *   idx_join: 중첩 루프 조인인데 outer 테이블의 행(row)을 읽으면서 inner 테이블에서 인덱스를 사용하는 조인
+    *   hash-join: 해시 조인, Hash join
     
 *   조인 종류: 위에서 (inner join) 부분으로, 질의 계획에서 출력되는 조인 종류는 다음과 같다.
     
@@ -670,6 +671,8 @@ SQL 힌트
     USE_NL [ (<spec_name_comma_list>) ] |
     USE_IDX [ (<spec_name_comma_list>) ] |
     USE_MERGE [ (<spec_name_comma_list>) ] |
+    USE_HASH [ (<spec_name_comma_list>) ] |
+    NO_USE_HASH [ (<spec_name_comma_list>) ] |
     ORDERED |
     LEADING |
     USE_DESC_IDX |
@@ -710,6 +713,8 @@ SQL 힌트는 주석에 더하기 기호(+)를 함께 사용하여 지정한다.
 
 *   **USE_NL**: 테이블 조인과 관련한 힌트로서, 질의 최적화기 중첩 루프 조인 실행 계획을 만든다.
 *   **USE_MERGE**: 테이블 조인과 관련한 힌트로서, 질의 최적화기는 정렬 병합 조인 실행 계획을 만든다.
+*   **USE_HASH**: 테이블 조인과 관련한 힌트로서, 질의 최적화기는 해시 조인 실행 계획을 만든다. 자세한 내용은 :ref:`join-method_hash`\을 참고한다.
+*   **NO_USE_HASH**: 테이블 조인과 관련한 힌트로서, 질의 최적화기가 해시 조인 실행 계획을 만들지 않는다. 자세한 내용은 :ref:`join-method_hash`\을 참고한다.
 *   **ORDERED**: 테이블 조인과 관련한 힌트로서, 질의 최적화기는 **FROM** 절에 명시된 테이블의 순서대로 조인하는 실행 계획을 만든다. **FROM** 절에서 왼쪽 테이블은 조인의 외부 테이블이 되고, 오른쪽 테이블은 내부 테이블이 된다.
 *   **LEADING**: 테이블 조인과 관련한 힌트로서, 질의 최적화기는 LEADING 힌트에 명시된 테이블의 순서대로 조인하는 실행 계획을 만든다.
 
