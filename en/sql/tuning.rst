@@ -1424,9 +1424,42 @@ The following example shows that the index is used as a covering index because c
                 1            2            3
                 4            5            6
 
+The following example shows an optimization that reduces unnecessary scans when the **SELECT** list only contains **COUNT(*)** when using a covering index.
+
+.. code-block:: sql
+
+    -- insert dummy data
+    INSERT INTO t select rownum % 8, rownum % 100, rownum % 1000 FROM dual connect by level <= 40000;
+    
+    -- csql> ;trace on
+    
+    -- count(*) optimization
+    SELECT count(*) FROM t WHERE col1 < 9;
+    
+::
+    
+    Trace Statistics:
+      SELECT (time: 1, fetch: 66, fetch_time: 0, ioread: 0)
+        SCAN (index: dba.t.i_t_col1_col2_col3), (btree time: 1, fetch: 65, ioread: 0, readkeys: 1002, filteredkeys: 0, rows: 0, covered: true, count_only: true)
+
+.. code-block:: sql
+
+    -- no count(*) optimization
+    SELECT count(col1) FROM t WHERE col1 < 9;
+    
+::
+    
+    Trace Statistics:
+      SELECT (time: 13, fetch: 180, fetch_time: 0, ioread: 0)
+        SCAN (index: dba.t.i_t_col1_col2_col3), (btree time: 8, fetch: 179, ioread: 0, readkeys: 1002, filteredkeys: 0, rows: 40002, covered: true)
+
+.. note::
+
+    **COUNT(*)** optimization for a single table when using a covering index is supported from CUBRID 11.2, and **COUNT(*)** optimization for join tables is supported from CUBRID 11.3.
+
 .. warning::
 
-    If the covering index is applied when you get the values from the **VARCHAR** type column, the empty strings that follow will be truncated. If the covering index is applied to the execution of query optimization, the resulting query value will be retrieved. This is because the value will be stored in the index with the empty string being truncated.
+    When a covering index is applied to retrieve values from a **VARCHAR** type column, any trailing empty strings will be truncated. This occurs because the empty string is stored in the index with the trailing spaces removed, affecting the query results when the index is used for query optimization.
 
     If you don't want this, use the **NO_COVERING_IDX** hint, which does not use the covering index function. If you use the hint, you can get the result value from the data area rather than from the index area.
 
