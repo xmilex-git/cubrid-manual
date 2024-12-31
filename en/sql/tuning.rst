@@ -11,6 +11,13 @@ Statistics for tables and indexes enables queries of the database system to proc
 
 **UPDATE STATISTICS** statement is recommended to be executed periodically. It is also recommended to execute when a new index is added or when a mass of **INSERT** or **DELETE** statements make the big difference between the statistics and the actual information.
 
+When updating statistics, the execution plan cache related to those statistics is not deleted. The execution plan is regenerated when the following two criteria are met during query execution.
+
+    #. 6 minutes have passed since the execution plan cache creation or regeneration check
+    #. The page size increases or decreases by more than 10 times, and statistics are updated
+
+The user can delete plan cache using the **PLANDUMP** utility. For more information about **PLANDUMP**, see :ref:`plandump`\.
+
 ::
 
     UPDATE STATISTICS ON [schema_name.]class-name [{, [schema_name.]class-name}] [WITH FULLSCAN]; 
@@ -93,28 +100,39 @@ The following shows the statistical information of *t1* table in CSQL interprete
 
 .. code-block:: sql
 
-    CREATE TABLE t1 (code INT);
-    INSERT INTO t1 VALUES(1),(2),(3),(4),(5);
-    CREATE INDEX i_t1_code ON t1(code);
+    CREATE TABLE t1 (code INT, name VARCHAR(20));
+    INSERT INTO t1 VALUES(1,'Park'),(2,'Park'),(3,'Joo'),(4,'Joo'),(5,'Song');
+    CREATE INDEX i_t1_code ON t1(code,name);
     UPDATE STATISTICS ON t1;
+    ;info stats t1
 
 ::
 
-    ;info stats t1
     CLASS STATISTICS
     ****************
-     Class name: t1 Timestamp: Mon Mar 25 17:56:10 2024
+     Class name: t1 Timestamp: Thu Dec 19 15:15:10 2024
      Total pages in class heap: 1
      Total objects: 5
-     Number of attributes: 1
+     Number of attributes: 2
      Attribute: code (integer)
         Number of Distinct Values: 5
         B+tree statistics:
-            BTID: { 1 , 832 }
-            Cardinality: 5 (5) , Total pages: 3 , Leaf pages: 1 , Height: 2
+            BTID: { 0 , 5760 }
+            Cardinality: 5 (5,5) , Total pages: 3 , Leaf pages: 1 , Height: 2
+     
+     Attribute: name (character varying)
+        Number of Distinct Values: 3
 
-*   *Number of Distinct Values*: The number of values from which duplicates have been removed. It is for calculating selectivity in the optimizer.
-*   *B+tree Cardinality*: The number of accumulated distinct values. It is for calculating minimum selectivity in the optimizer.
+*   *Timestamp*: The time when the statistics were updated.
+*   *Total pages*: The number of pages in the table.
+*   *Total objects*: The total number of rows in the table.
+*   *Number of Distinct Values*: The number of values, with duplicates removed. The column **code** consists of all different values, so the NDV is 5. If type of the column is **LOB** or **VARCHAR** exceeding 4,000 characters, NDV is not generated. NDV is used to calculate **SELECTIVITY** in the optimizer. For more information, see :ref:`optimizer-principle`\.
+*   B+tree statistics: Index statistics
+
+    *   *B+tree Cardinality*: The number of values from which the accumulated duplicates of the index key values have been removed. In the example above, **(5,5)** matches the index column **(code,name)**. The first **5** is the number of values from which the duplicates of the **code** column have been removed, and the second **5** is the number of values from which the duplicates of the two columns **code,name** have been removed.
+    *   *Total pages*: The total number of index pages.
+    *   *Leaf pages*: The number of pages in the index leaf block.
+    *   *Height*: The height of the B+tree index including the leaf block.
 
 .. _viewing-query-plan:
 
@@ -367,6 +385,228 @@ If you ensure that left table's row number is a lot smaller than the right table
 
     SELECT /*+ RECOMPILE ORDERED */  DISTINCT h.host_year, o.host_nation
     FROM history h INNER JOIN olympic o ON h.host_year = o.host_year;
+
+You can specify the table order by specifying the **LEADING** hint. Unlike the **ORDERED** hint, it can be specified regardless of the order in which the tables are written.
+
+.. code-block:: sql
+
+    SELECT /*+ RECOMPILE LEADING(o,h) */  DISTINCT h.host_year, o.host_nation
+    FROM history h INNER JOIN olympic o ON h.host_year = o.host_year;
+
+.. _optimizer-principle:
+
+Optimizer Principle
+=====================
+
+**CUBRID**\'s optimizer performs cost-based optimization when generating a query execution plan, and calculates **selectivity** and **expected number of rows and pages** through statistics. Based on this, it calculates the cost and selects the execution plan with the lowest cost.
+
+Selectivity
+--------------
+
+**Selectivity** is the ratio of data to be selected when a specific predicate is evaluated. The optimizer calculates the selectivity for each predicate in the **WHERE** clause. **CUBRID** assumes that the entire data is evenly distributed and calculates the **selectivity** using the **Number of Distinct Value** of statistics.
+
+::
+
+    SELECTIVITY = 1 / Number of Distinct Value
+
+.. code-block:: sql
+
+    CREATE TABLE t1 (code INT, name VARCHAR(20));
+    INSERT INTO t1 VALUES(1,'Park'),(2,'Park'),(3,'Park'),(4,'joo'),(5,'joo'),(5,'joo');
+    CREATE INDEX i_t1_code ON t1(code,name);
+    UPDATE STATISTICS ON t1;
+     
+    ;info stats t1
+
+::
+
+    CLASS STATISTICS
+    ****************
+     Class name: t1 Timestamp: Fri Dec 20 13:07:58 2024
+     Total pages in class heap: 1
+     Total objects: 6
+     Number of attributes: 2
+     Attribute: code (integer)
+        Number of Distinct Values: 5
+        B+tree statistics:
+            BTID: { 0 , 5760 }
+            Cardinality: 5 (5,5) , Total pages: 3 , Leaf pages: 1 , Height: 2
+     
+     Attribute: name (character varying)
+        Number of Distinct Values: 2
+
+.. code-block:: sql
+
+    ;plan detail
+    SELECT /*+ recompile */ * FROM t1 WHERE code = 3 AND name IN ('Song', 'Ham');
+
+::
+
+    Join graph terms:
+    term[0]: [dba.t1].code=3 (sel 0.2)
+    term[1]: [dba.t1].[name] range ('Ham' =  or 'Song' = ) (sel 0.75)
+
+**term[0]: [dba.t1].code=3** The **Number of Distinct Values** of **code** in the statistics is 5, so the selectivity is 1/5 or 0.2.
+**term[1]: [dba.t1].[name] range ('Ham' = or 'Song' = )** performs an **OR** operation on two values of name. Since the **Number of Distinct Values** for **name** is 2, the selectivity for each value is 1/2. Adding the two values and subtracting the intersection gives the calculation **0.5 + 0.5 - (0.5 x 0.5)**, resulting in 0.75.
+
+Expected number of rows
+-----------------------------
+
+The **expected number of rows**  is calculated by multiplying the **selectivity** by the **total number of data rows**.
+
+::
+
+    Number of expected rows = total rows of a table * selectivity
+
+.. code-block:: sql
+
+    ;plan detail
+    SELECT /*+ recompile */ * FROM t1 WHERE name = 'Park';
+
+::
+
+    Join graph nodes:
+    node[0]: dba.t1 dba.t1(6/1)
+    Join graph terms:
+    term[0]: [dba.t1].[name]='Park' (sel 0.5)
+     
+    Query plan:
+     
+    sscan
+        class: t1 node[0]
+        sargs: term[0]
+        cost:  1 card 3
+
+**dba.t1(6/1)** indicates that the total number of rows in the t1 table is 6 and the number of pages is 1. Since the selectivity of **[dba.t1].[name]='Park'** is 0.5, the expected number of rows is 3, which is calculated as **6 x 0.5**. **cost: 1 card 3** in the execution plan indicates that the cost is 1 and the expected number of rows is 3.
+
+Cost of sequential scan
+------------------------
+
+When estimating costs, the optimizer considers two things:
+
+    #. The cost of reading a page
+    #. The CPU cost of repetitive routines
+
+The following example shows how the cost of a sequential scan is calculated.
+
+::
+
+    Page cost = number of pages in table
+    CPU cost = total number of rows in table X CPU weight
+
+.. code-block:: sql
+
+    drop table if exists t1;
+    create table t1 (col1 int, col2 int, col3 int, col4 int);
+    insert into t1 select mod(rownum,2), mod(rownum,4), rownum, rownum from dual connect by level <= 4000;
+    update statistics on t1;
+     
+    ;plan detail
+    select /*+ recompile */ count(*) from t1 where col2 = 2;
+
+::
+
+    Join graph nodes:
+    node[0]: dba.t1 dba.t1(4000/9)
+    Join graph terms:
+    term[0]: [dba.t1].col2=2 (sel 0.25)
+     
+    Query plan:
+     
+    sscan
+        class: t1 node[0]
+        sargs: term[0]
+        cost:  19 card 1000
+
+**node[0]: dba.t1 dba.t1(4000/9)** shows that the total number of rows in the t1 table is 4000 and the number of pages is 9. Therefore, the page cost is 9, which is the total number of pages in the t1 table. The CPU cost is the total number of rows in the table multiplied by the CPU weight, which is **4000 x 0.0025**, resulting in a cost of 10. Adding the two values gives 19, and from **cost: 19 card 1000**, we can see that the cost is 19 and the expected number of rows to be retrieved is 1000.
+
+Cost of index scan
+--------------------
+
+Index scan is performed by searching non-leaf nodes, leaf nodes, and heap areas. The index scan starts by searching non-leaf nodes including the root node to find the starting point of the leaf node. Then, it searches the leaf nodes, looks up the satisfying key, and scans the heap area with the **OID**. The following example shows how the index scan is performed.
+
+.. code-block:: sql
+
+    drop table if exists t2;
+    create table t2 (col1 int, col2 int, col3 int, col4 int);
+    insert into t2 select mod(rownum,20), mod(rownum,80), rownum, rownum from dual connect by level <= 4000;
+    create index idx on t2(col1,col2,col3);
+    update statistics on t2;
+     
+    ;plan detail
+    select /*+ recompile */ count(*) from t2 where col1 = 1 and col3 = 1 and col4 = 1;
+
+::
+
+    Join graph terms:
+    term[0]: [dba.t2].col4=1 (sel 0.00025)
+    term[1]: [dba.t2].col3=1 (sel 0.0125)
+    term[2]: [dba.t2].col1=1 (sel 0.05)
+
+    Query plan:
+     
+    iscan
+        class: t2 node[0]
+        index: idx term[2]
+        filtr: term[1]
+        sargs: term[0]
+        cost:  4 card 1
+
+You can check the predicates in the execution plan through the information in **Join graph terms**. **index: idx term[2]** is the predicate for searching the non-leaf node during the index vertical scan. The **filtr: term[1]** predicate is for filtering the key in the leaf node during the index horizontal scan. When accessing the heap and filtering data, the **sargs: term[0]** predicate is used to filter.
+
+::
+
+    ;info stats t2
+
+::
+
+     Attribute: col1 (integer)
+        Number of Distinct Values: 20
+        B+tree statistics:
+            BTID: { 0 , 5760 }
+            Cardinality: 4000 (20,4000,4000) , Total pages: 11 , Leaf pages: 9 , Height: 2
+
+The cost of an index scan is calculated as follows:
+
+    #. Cost of reading a page = predicted non-leaf node pages accessed + leaf node pages + heap pages
+    #. CPU cost of a repeated routine = predicted number of leaf node keys accessed
+
+The number of pages in a non-leaf node is 1 because the index **Height** of the statistics is 2 and the number of pages to be read excluding the leaf node is **2 - 1**. The number of leaf node pages is obtained by multiplying **Leaf pages** by the selectivity of the predicate **index: idx term[2]** used to search the non-leaf node. Since it is **MAX(9 X 0.05, 1)**, the number of leaf node pages to be read is 1. The number of heap pages to be read is obtained by multiplying the total number of pages in the table by the selectivity of **index** and **filtr** conditions. Here, it is calculated as **MAX(9 X 0.05 X 0.0125, 1)**, so it is calculated that 1 page must be read. Finally, the CPU cost is obtained by multiplying the selectivity of **index: idx term[2]** by the CPU weight from the total number of rows in the table. If you calculate it as **MAX(4000 X 0.05 X 0.0025, 1)**, you get 1, and if you add up all the results so far, you can see that the cost is 4. If you look at **cost: 4 card 1** in the execution plan, you can see that the cost is 4 and the expected number of rows is 1.
+
+Cost of join
+-----------------------
+
+The cost of a join is generated by calculating the cost of the preceding table and the cost of the succeeding table separately, and the cost is calculated according to the join method. The following example below shows how the cost is calculated in a nested loop join method.
+
+.. code-block:: sql
+
+    create index idx1 on t2(col4);
+     
+    --;plan detail
+    select /*+ recompile */ count(*)
+    from t1 a, t2 b
+    where a.col4 = b.col4
+    and b.col1 = 1
+    and b.col3 = 1
+    and a.col2 = 2;
+
+::
+
+    Query plan:
+     
+    idx-join (inner join)
+        outer: sscan
+                   class: a node[0]
+                   sargs: term[3]
+                   cost:  19 card 1000
+        inner: iscan
+                   class: b node[1]
+                   index: idx1 term[0]
+                   sargs: term[1] AND term[2]
+                   cost:  2 card 3
+        cost:  572 card 1
+
+The preceding table is *a* and the succeeding table is *b*. Since the execution of the succeeding table is repeated as many times as the number of rows of the preceding table due to the nature of the nested loop join, the cost of the succeeding table can be calculated by multiplying the variable cost of the *b* table by the expected number of rows of the *a* table. **CUBRID** internally manages fixed costs and variable costs separately, and this information cannot be displayed in the execution plan. The variable cost of the succeeding table is approximately *0.553*, and the cost of the succeeding table incurred during the join is 553 when calculated by *0.553 * 1000*, and the final cost is *572* when adding the cost of the preceding table *19*.
 
 .. _query-profiling:
  
@@ -2511,17 +2751,65 @@ Optimization Using Rewrite
 
 .. _join-elimination-optimization:
 
-Join Elimination Optimization
------------------------------
+Join transforming Optimization
+------------------------------
 
-The join elimination optimization is a method to reduce join operations and improve the query performance by eliminating the joins with the tables that do not affect the query results.
+The join transforming optimization is a method to reduce join operations and improve the query performance by transforming the joins with the tables that do not affect the query results.
 
-In the join elimination optimization, there are two operations:
+In the join transforming optimization, there are three operations:
 
+    #. Transforming **OUTER JOIN** to **INNER JOIN**
     #. Eliminating **INNER JOIN**
     #. Eliminating **LEFT OUTER JOIN**
 
 To disable the join elimination optimization, use the **NO_ELIMINATE_JOIN** hint.
+
+.. _transform-outer-inner:
+
+Transforming **OUTER JOIN** to **INNER JOIN**
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**OUTER JOIN** has a predefined join order with the leading table and trailing table, which restricts join order optimization. For performance improvement, **CUBRID** converts **OUTER JOIN** to **INNER JOIN** if there is a predicate which is not nullable on the trailing table. A nullable predicate is excluded from this transformation and satisfy the following conditions:
+
+    #. Predicates written in the **ON** clause.
+    #. Using **NULL** transformation functions. This includes **COALESCE (), NVL (), NVL2 (), DECODE (), IF (), IFNULL (), CONCAT_WS ()**.
+    #. **IS NULL ,CASE** statements are also not targets for **Predicate Push**.
+
+The following example shows an optimization that transform **OUTER JOIN**\ to **INNER JOIN**\.
+
+.. code-block:: sql
+
+    --create table
+    CREATE TABLE t1 (col1 int, col2 int);
+    INSERT INTO t1 values (1,1),(2,2),(3,2);
+     
+    -- csql> ;plan simple
+    SELECT /*+ recompile */ *
+    FROM t1 a LEFT OUTER JOIN t1 b on a.col1 = b.col2
+    WHERE b.col1 = 2;
+    
+::
+    
+    Query Plan:
+      NESTED LOOPS (inner join)
+        TABLE SCAN (a)
+        TABLE SCAN (b)
+
+The following example demonstrates that the transformation from **OUTER JOIN** to **INNER JOIN** is not possible due to the nullable predicate.
+
+.. code-block:: sql
+
+    -- csql> ;plan simple
+    SELECT /*+ recompile */ *
+    FROM t1 a LEFT OUTER JOIN t1 b on a.col1 = b.col2
+    WHERE nvl(b.col1,2) = 2;
+    
+::
+    
+    Query Plan:
+      NESTED LOOPS (left outer join)
+        TABLE SCAN (a)
+        TABLE SCAN (b)
 
 .. _eliminate-inner-join:
 
@@ -3903,7 +4191,7 @@ The join with the *right_tbl* table was eliminated.
 .. _view_merge:
 
 View Merging Optimization
-=========================
+---------------------------
 
 **View Merging** is an optimization for reducing overhead that occur during the processing of view or inline view. 
 When a query includes a view, there is an overhead of creating a temporary table for that view. 
@@ -4033,7 +4321,25 @@ The following is an example using **ROWNUM, LIMIT** or **GROUPBY_NUM(), INST_NUM
         FROM (SELECT gender, rownum FROM athlete WHERE rownum < 15) a
         WHERE gender = 'M';
 
-When using **ROWNUM, LIMIT** or **GROUPBY_NUM(), INST_NUM(), ORDERBY_NUM()** in views as above, **View Merging** optimization cannot be performed.
+When using **ROWNUM, LIMIT** or **GROUPBY_NUM(), INST_NUM(), ORDERBY_NUM()** in views as above, **View Merging** optimization cannot be performed. However, when **ROWNUM** is used for partial range processing, **View Merging** is performed even if **ROWNUM** exists. This is the case when the following two conditions are satisfied.
+
+    #. The **WHERE** clause includes only predicates involving **ROWNUM**
+    #. There is only one subquery in the **FROM** clause
+
+.. code-block:: sql
+
+        --csql> ;plan detail
+        SELECT *
+        FROM (SELECT name, rownum rn
+                FROM (SELECT name FROM athlete WHERE nation_code = 'KOR') a
+               WHERE rownum < 15) b
+        WHERE rn > 5;
+
+::
+
+    Query stmt:
+     
+    select b.[name], (rownum) from athlete b where ((rownum)> ?:0  and (rownum)< ?:1 ) and (b.nation_code= ?:2 )
 
 The following is an example using **Correlated Subquery**.
 
@@ -4055,6 +4361,26 @@ The following is an example where a view includes **RANDOM(), DRANDOM(), SYS_GUI
         WHERE a.code = b.athlete_code;
 
 When using **RANDOM(), DRANDOM(), SYS_GUID()** in views as above, **View Merging** optimization cannot be performed.
+
+If **View Merging** optimization cannot be performed, **CUBRID** optimizes the **SELECT-LIST** item of the subquery. The following example shows how the **SELECT-LIST** of the subquery is optimized.
+
+.. code-block:: sql
+
+    --csql> ;plan detail
+    SELECT /*+ recompile */ aa.host_year, aa.rn
+    FROM (select host_year,
+                (select name from event where code = a.event_code) event_name,
+                (select name from athlete where code = a.athlete_code) athlete_name,
+                rownum rn
+         from game a
+         where medal = 'G') aa
+    WHERE host_year = '2004';
+
+::
+
+    Query stmt:
+     
+    select aa.host_year, aa.rn from (select a.host_year, (rownum) as [rn] from game a where a.medal= ?:1 ) aa (host_year, rn) where aa.host_year= ?:0
 
 .. _pred-push:
 
@@ -4084,6 +4410,29 @@ However, if the query is rewritten as follows by using **Predicate Push**, it ca
         SELECT a.name, r.score 
         FROM (SELECT name, nation_code, code, count(*) cnt FROM athlete WHERE nation_code = 'KOR' GROUP BY name, nation_code ) a, record r
         WHERE a.code = r.athlete_code;
+
+The following example shows how **Predicate Push** works in a situation where there are multiple subqueries.
+
+.. code-block:: sql
+
+    --csql> ;plan detail
+    SELECT a.host_year
+    FROM (select distinct host_year, event_code, athlete_code from game where host_year = 2004) a,
+         (select distinct host_year, event_code, athlete_code from game where event_code = 20021) b
+    WHERE a.host_year = b.host_year
+    AND a.event_code = b.event_code
+    AND a.athlete_code = b.athlete_code;
+
+::
+
+    Query stmt:
+     
+    select a.host_year
+     from (select distinct game.host_year, game.event_code, game.athlete_code from game game where game.host_year= ?:0  and game.event_code=20021) a (host_year, event_code, athlete_code),
+          (select distinct game.host_year, game.event_code, game.athlete_code from game game where game.event_code= ?:1  and game.host_year=2004) b (host_year, event_code, athlete_code)
+    where a.athlete_code=b.athlete_code and a.host_year=b.host_year and a.event_code=b.event_code
+
+The predicates **game.event_code=20021** and **game.host_year=2004** are added to each subquery according to the join condition of the main query.
 
 In the following cases, **Predicate Push** is not performed:
 
@@ -4154,6 +4503,70 @@ The following is an example that performs an **OUTER JOIN** where either the pre
         WHERE NVL(r.score, '0') = '0';
 
 When performing an **OUTER JOIN** and either the predicate to be pushed or the target for **Predicate Push** within the view uses a **NULL** transformation function, it's not a target for **Predicate Push**.
+
+.. _subquery_unnest:
+
+Subquery unnest
+-------------------------
+**Subquery unnest** improves performance by converting the filtering method, which executes the subquery in the **WHERE** clause repeatedly, into a join method that guarantees the same result. Subqueries in the **WHERE** clause can have different characteristics depending on the operator. Subqueries with operators like **IN** or **EXISTS**, which can return multiple rows, are the main targets for optimization. **CUBRID** partially supports this optimization only for the **IN** operator.
+
+The following example shows converting an IN operator into a join query.
+
+.. code-block:: sql
+
+    --csql> set optimization level 513;
+    SELECT game_date
+      FROM game
+     WHERE (host_year,event_code,athlete_code) IN (select host_year,event_code,athlete_code
+                                                     from game
+                                                    where nation_code = 'KOR' and medal = 'G');
+
+::
+
+    Query plan:
+     
+    idx-join (inner join)
+        outer: sscan
+                   class: av1861 node[1]
+                   cost:  1 card 25
+        inner: iscan
+                   class: game node[0]
+                   index: pk_game_host_year_event_code_athlete_code term[0] AND term[1] AND term[2]
+                   cost:  3 card 8653
+        cost:  17 card 1
+     
+    Query stmt:
+     
+    select game.game_date from game game, (select distinct game.host_year, game.event_code, game.athlete_code from game game where game.medal= ?:0  and game.nation_code= ?:1 ) av1861 (av_1, av_2, av_3) where game.host_year=av1861.av_1 and game.event_code=av1861.av_2 and game.athlete_code=av1861.av_3
+
+.. note::
+
+    Starting from CUBRID 11.0, subqueries that retrieve multiple columns are allowed in the arguments of the **IN** operator.
+
+.. _predicate_transitivity:
+
+Transitive predicate
+-------------------------
+**Transitive predicate** improves query performance by adding conditional clauses that can be logically constructed.
+
+The following example shows that the **b.col1 = 3** predicate is added with **Transitive predicate** optimization.
+
+.. code-block:: sql
+
+    CREATE TABLE t1 (col1 int, col2 int, col3 int);
+    CREATE TABLE t2 (col1 int, col2 int, col3 int);
+     
+    --csql> ;plan detail
+    SELECT /*+ recompile */ *
+    FROM t1 a, t2 b
+    WHERE a.col1 = b.col1
+    AND a.col1 = 3;
+
+::
+
+    Query stmt:
+     
+    select a.col1, a.col2, a.col3, b.col1, b.col2, b.col3 from t1 a, t2 b where b.col1= ?:0  and a.col1= ?:1  and a.col1=b.col1
 
 .. _query-cache:
 
