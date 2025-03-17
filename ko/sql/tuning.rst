@@ -2,6 +2,7 @@
 :meta-description: How to optimize query execution in CUBRID database.
 
 .. include:: join_method.inc
+.. include:: parallel_execution.inc
 
 통계 정보 갱신
 ==============
@@ -930,6 +931,8 @@ SQL 힌트
     NO_HASH_AGGREGATE |
     NO_HASH_LIST_SCAN |
     NO_LOGGING |
+    PARALLEL |
+    NO_PARALLEL_HEAP_SCAN |
     RECOMPILE
 
     <spec_name_comma_list> ::= <spec_name> [, <spec_name>, ... ]
@@ -998,6 +1001,10 @@ SQL 힌트는 주석에 더하기 기호(+)를 함께 사용하여 지정한다.
     .. note::
 
         현재 레코드 삽입, 갱신, 삭제 시 힙 파일에서 생성되는 로그에만 영향을 준다. 따라서 복구 후 테이블과 인덱스의 데이터가 불일치하는 문제, 커밋된 레코드가 복구되지 않는 문제 등이 발생할 수 있다. 반드시 주의하여 사용하여야 한다.
+
+*   **PARALLEL**: 질의를 병렬 처리하도록 하는 힌트이다. 자세한 내용은 :ref:`parallel-execution` 를 참고한다.
+
+*   **NO_PARALLEL_HEAP_SCAN**: 테이블 스캔을 병렬 처리하지 않도록 지시하는 힌트이다. 자세한 내용은 :ref:`parallel-execution` 를 참고한다.
 
 .. _recompile:
 
