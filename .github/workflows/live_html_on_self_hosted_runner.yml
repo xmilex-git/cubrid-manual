@@ -5,6 +5,11 @@ on:
     branches:
       - self_hosted_runner
   workflow_dispatch:
+    inputs:
+      reason:
+        description: '수동 실행 이유 (선택사항)'
+        required: false
+        default: '수동 테스트'
 
 jobs:
   clone-repo:
@@ -77,10 +82,24 @@ jobs:
           if [ -d "ko" ]; then
             cd ko
             echo "ko 폴더에서 make livehtml 실행 중..."
-            nohup make livehtml > $GITHUB_WORKSPACE/livehtml.log 2>&1 &
-            echo "LiveHTML 서버 시작됨. PID: $!"
+            
+            # 기존 tmux 세션 종료
+            tmux has-session -t cubrid-livehtml 2>/dev/null && tmux kill-session -t cubrid-livehtml || true
+            
+            # 새 tmux 세션 시작 및 명령 실행
+            tmux new-session -d -s cubrid-livehtml -c "$REPO_DIR/ko" "make livehtml 2>&1 | tee $GITHUB_WORKSPACE/livehtml.log"
+            
+            echo "LiveHTML 서버가 tmux 세션에서 시작되었습니다."
+            echo "세션 이름: cubrid-livehtml"
+            echo "세션 목록 확인: tmux list-sessions"
+            echo "세션 연결: tmux attach -t cubrid-livehtml"
+            
+            # 세션이 시작되었는지 확인
             sleep 5
-            tail -n 20 $GITHUB_WORKSPACE/livehtml.log
+            tmux list-sessions
+            
+            # 로그 확인
+            tail -n 20 $GITHUB_WORKSPACE/livehtml.log || true
           else
             echo "ko 폴더를 찾을 수 없습니다."
             exit 1
