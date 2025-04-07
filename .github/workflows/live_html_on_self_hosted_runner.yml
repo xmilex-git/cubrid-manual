@@ -10,19 +10,36 @@ jobs:
   clone-repo:
     runs-on: [self-hosted, 32]
     steps:
-      - name: Clean Previous Workspace
+      - name: Update Repository
         run: |
-          # _work 디렉토리에서 현재 레포지토리 관련 디렉토리 삭제
-          echo $GITHUB_WORKSPACE
-          if [ -d "$GITHUB_WORKSPACE/../cubrid-manual" ]; then
-            echo "이전 작업 디렉토리 삭제 중..."
-            rm -rf "$GITHUB_WORKSPACE/../cubrid-manual"
+          # GitHub 작업 디렉토리 경로 출력
+          echo "현재 작업 디렉토리: $GITHUB_WORKSPACE"
+          
+          # 레포지토리 디렉토리 설정
+          REPO_DIR="$GITHUB_WORKSPACE/../cubrid-manual"
+          
+          # 레포지토리가 이미 존재하는지 확인
+          if [ -d "$REPO_DIR/.git" ]; then
+            echo "기존 레포지토리가 있습니다. 최신 변경사항을 가져옵니다..."
+            cd "$REPO_DIR"
+            git fetch --all
+            git checkout self_hosted_runner
+            git reset --hard origin/self_hosted_runner
+            echo "레포지토리가 성공적으로 업데이트 되었습니다."
+          else
+            echo "레포지토리가 존재하지 않습니다. 새로 클론합니다..."
+            # 부모 디렉토리가 있는지 확인하고 없으면 생성
+            mkdir -p "$(dirname "$REPO_DIR")"
+            # 기존 디렉토리가 있다면 삭제
+            if [ -d "$REPO_DIR" ]; then
+              rm -rf "$REPO_DIR"
+            fi
+            # 레포지토리 클론
+            git clone --branch self_hosted_runner --depth 1 https://github.com/CUBRID/cubrid-manual.git "$REPO_DIR"
           fi
           
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
+          # 작업 디렉토리를 레포지토리 디렉토리로 변경
+          cd "$REPO_DIR"
           
       - name: Repository Info
         run: |
