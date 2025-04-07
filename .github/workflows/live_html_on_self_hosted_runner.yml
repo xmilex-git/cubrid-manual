@@ -34,8 +34,10 @@ jobs:
             if [ -d "$REPO_DIR" ]; then
               rm -rf "$REPO_DIR"
             fi
+            cd $GITHUB_WORKSPACE/repo
             # 레포지토리 클론
-            git clone --branch self_hosted_runner --depth 1 https://github.com/CUBRID/cubrid-manual.git "$REPO_DIR"
+            git clone https://github.com/xmilex-git/cubrid-manual.git
+            git checkout self_hosted_runner
           fi
           
           echo "REPO_DIR=$REPO_DIR" >> $GITHUB_ENV
