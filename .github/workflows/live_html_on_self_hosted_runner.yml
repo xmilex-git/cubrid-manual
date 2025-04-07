@@ -10,6 +10,14 @@ jobs:
   clone-repo:
     runs-on: [self-hosted, 32]
     steps:
+      - name: Clean Previous Workspace
+        run: |
+          # _work 디렉토리에서 현재 레포지토리 관련 디렉토리 삭제
+          if [ -d "$GITHUB_WORKSPACE/../cubrid-manual" ]; then
+            echo "이전 작업 디렉토리 삭제 중..."
+            rm -rf "$GITHUB_WORKSPACE/../cubrid-manual"
+          fi
+          
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
@@ -46,7 +54,7 @@ jobs:
           if [ -d "ko" ]; then
             cd ko
             echo "ko 폴더에서 make livehtml 실행 중..."
-            nohup make livehtml > livehtml.log 2>&1 &
+            nohup make livehtml > ../../../../livehtml.log 2>&1 &
             echo "LiveHTML 서버 시작됨. PID: $!"
             sleep 5
             tail -n 20 livehtml.log
