@@ -37,6 +37,7 @@ jobs:
             cd $GITHUB_WORKSPACE/repo
             # 레포지토리 클론
             git clone https://github.com/xmilex-git/cubrid-manual.git
+            cd cubrid-manual
             git checkout self_hosted_runner
           fi
           
