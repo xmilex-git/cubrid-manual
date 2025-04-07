@@ -1,7 +1,16 @@
-name: Make Live HTML on self_hosted_runner Branch Push
+name: Make Live HTML on self_hosted_runner
 
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: '체크아웃할 브랜치/태그'
+        required: false
+        default: 'develop'
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
   clone-repo:
@@ -15,13 +24,17 @@ jobs:
           # 레포지토리 디렉토리 설정
           REPO_DIR="$GITHUB_WORKSPACE/repo/cubrid-manual"
           
+          # 브랜치 설정 (workflow_dispatch에서 입력받은 경우 해당 값 사용)
+          BRANCH="${{ github.event.inputs.ref || 'self_hosted_runner' }}"
+          echo "체크아웃할 브랜치: $BRANCH"
+          
           # 레포지토리가 이미 존재하는지 확인
           if [ -d "$REPO_DIR/.git" ]; then
             echo "기존 레포지토리가 있습니다. 최신 변경사항을 가져옵니다..."
             cd "$REPO_DIR"
             git fetch --all
-            git checkout self_hosted_runner
-            git reset --hard origin/self_hosted_runner
+            git checkout $BRANCH
+            git reset --hard origin/$BRANCH
             echo "레포지토리가 성공적으로 업데이트 되었습니다."
           else
             echo "레포지토리가 존재하지 않습니다. 새로 클론합니다..."
@@ -35,7 +48,7 @@ jobs:
             # 레포지토리 클론
             git clone https://github.com/xmilex-git/cubrid-manual.git
             cd cubrid-manual
-            git checkout self_hosted_runner
+            git checkout $BRANCH
           fi
           
           echo "REPO_DIR=$REPO_DIR" >> $GITHUB_ENV
