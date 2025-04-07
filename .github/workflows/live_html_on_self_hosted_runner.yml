@@ -1,15 +1,9 @@
 name: Make Live HTML on self_hosted_runner Branch Push
 
 on:
-  push:
-    branches:
-      - self_hosted_runner
   workflow_dispatch:
-    inputs:
-      reason:
-        description: '수동 실행 이유 (선택사항)'
-        required: false
-        default: '수동 테스트'
+  push:
+    branches: self_hosted_runner
 
 jobs:
   clone-repo:
