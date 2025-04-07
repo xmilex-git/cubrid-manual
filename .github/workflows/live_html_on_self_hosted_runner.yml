@@ -2,8 +2,6 @@ name: Make Live HTML on self_hosted_runner Branch Push
 
 on:
   workflow_dispatch:
-  push:
-    branches: self_hosted_runner
 
 jobs:
   clone-repo:
