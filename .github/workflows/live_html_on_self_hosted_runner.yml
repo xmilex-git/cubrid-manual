@@ -8,7 +8,7 @@ on:
 
 jobs:
   clone-repo:
-    runs-on: [self-hosted, cubrid_dev4_32_ilhansong]
+    runs-on: [self-hosted, 32]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
