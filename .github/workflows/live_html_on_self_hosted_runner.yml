@@ -61,7 +61,7 @@ jobs:
         run: |
           if pgrep -f "make livehtml"; then
             echo "이전 livehtml 프로세스 종료 중..."
-            pkill -f "make livehtml" || true
+            tmux send-keys -t cubrid-livehtml:0.0 C-c  # 실행 중인 프로세스 종료
             sleep 3 # 프로세스가 완전히 종료되길 기다림
           fi
           
@@ -78,17 +78,18 @@ jobs:
           
       - name: Run Live HTML Server
         run: |
+          echo $REPO_DIR
           cd $REPO_DIR
           if [ -d "ko" ]; then
             cd ko
             echo "ko 폴더에서 make livehtml 실행 중..."
-            
-            # 기존 tmux 세션 종료
-            tmux has-session -t cubrid-livehtml 2>/dev/null && tmux kill-session -t cubrid-livehtml || true
-            
-            # 새 tmux 세션 시작 및 명령 실행
-            tmux new-session -d -s cubrid-livehtml -c "$REPO_DIR/ko" "make livehtml 2>&1 | tee $GITHUB_WORKSPACE/livehtml.log"
-            
+
+            echo "기존 cubrid-livehtml 세션이 있습니다. 해당 세션에 명령을 보냅니다..."
+            # 기존 세션의 창에 명령 전송
+            tmux send-keys -t cubrid-livehtml:0.0 C-c  # 실행 중인 프로세스 종료
+            sleep 2
+            tmux send-keys -t cubrid-livehtml:0.0 "cd /home/cubrid/github_self_hosted_runner/actions-runner/_work/cubrid-manual/cubrid-manual/repo/cubrid-manual/ko && make livehtml 2>&1 | tee /home/cubrid/github_self_hosted_runner/actions-runner/_work/cubrid-manual/cubrid-manual/livehtml.log" C-m
+
             echo "LiveHTML 서버가 tmux 세션에서 시작되었습니다."
             echo "세션 이름: cubrid-livehtml"
             echo "세션 목록 확인: tmux list-sessions"
