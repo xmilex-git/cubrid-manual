@@ -16,7 +16,7 @@ jobs:
           echo "현재 작업 디렉토리: $GITHUB_WORKSPACE"
           
           # 레포지토리 디렉토리 설정
-          REPO_DIR="$GITHUB_WORKSPACE/../cubrid-manual"
+          REPO_DIR="$GITHUB_WORKSPACE/repo/cubrid-manual"
           
           # 레포지토리가 이미 존재하는지 확인
           if [ -d "$REPO_DIR/.git" ]; then
@@ -38,11 +38,11 @@ jobs:
             git clone --branch self_hosted_runner --depth 1 https://github.com/CUBRID/cubrid-manual.git "$REPO_DIR"
           fi
           
-          # 작업 디렉토리를 레포지토리 디렉토리로 변경
-          cd "$REPO_DIR"
+          echo "REPO_DIR=$REPO_DIR" >> $GITHUB_ENV
           
       - name: Repository Info
         run: |
+          cd $REPO_DIR
           echo "레포지토리를 성공적으로 클론했습니다"
           echo "현재 경로: $(pwd)"
           echo "레포지토리 내용: $(ls -la)"
@@ -59,6 +59,7 @@ jobs:
           
       - name: Build HTML Documentation
         run: |
+          cd $REPO_DIR
           if [ -f "Makefile" ] && grep -q "html:" Makefile; then
             echo "cubrid-manual 폴더에서 make html 실행 중..."
             make html
@@ -69,13 +70,14 @@ jobs:
           
       - name: Run Live HTML Server
         run: |
+          cd $REPO_DIR
           if [ -d "ko" ]; then
             cd ko
             echo "ko 폴더에서 make livehtml 실행 중..."
-            nohup make livehtml > ../../../../livehtml.log 2>&1 &
+            nohup make livehtml > $GITHUB_WORKSPACE/livehtml.log 2>&1 &
             echo "LiveHTML 서버 시작됨. PID: $!"
             sleep 5
-            tail -n 20 livehtml.log
+            tail -n 20 $GITHUB_WORKSPACE/livehtml.log
           else
             echo "ko 폴더를 찾을 수 없습니다."
             exit 1
