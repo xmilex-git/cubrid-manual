@@ -2,7 +2,7 @@
 실행문
 ------------------
 
-현재 PL/CSQL은 다음과 같이 14가지 종류의 실행문을 제공한다.
+현재 PL/CSQL은 다음과 같이 15가지 종류의 실행문을 제공한다.
 ::
 
     <statement> ::=
@@ -75,7 +75,7 @@ BLOCK에서 선언된 아이템이 바깥 scope에서 선언된 다른 아이템
         DBMS_OUTPUT.put_line(a || b || c);          -- '333'
     END;
 
-body 내부의 실행문들 중 수행시 도달할 수 없는 실햄문이 있는 경우 컴파일 과정에서 에러를 발생한다.
+body 내부의 실행문들 중 수행시 도달할 수 없는 실행문이 있는 경우 컴파일 과정에서 에러를 발생한다.
 다음은 도달할 수 없는 실행문이 있는 간단한 예이다.
 
 .. code-block:: sql
@@ -203,9 +203,9 @@ RAISE_APPLICATION_ERROR의 사용 형태는 Built-in 프로시저 호출처럼 �
             dbms_output.put_line('code=' || SQLCODE || ', message=''' || SQLERRM || '''');
     END;
 
-    CALL test_raise_app_err(1);     -- 출력: code=1001, message='my error 1'
-    CALL test_raise_app_err(2);     -- 출력: code=1002, message='my error 2'
-    CALL test_raise_app_err(3);     -- 출력: code=1003, message='my error 3'
+    CALL test_raise_app_err(1);     -- DBMS_OUTPUT 출력: code=1001, message='my error 1'
+    CALL test_raise_app_err(2);     -- DBMS_OUTPUT 출력: code=1002, message='my error 2'
+    CALL test_raise_app_err(3);     -- DBMS_OUTPUT 출력: code=1003, message='my error 3'
 
 .. _exec_imme:
 
@@ -345,7 +345,7 @@ Exception을 발생시킨다.
 Exception 이름 *identifier*\는 :ref:`시스템 Exception <exception>`\이거나
 :ref:`사용자가 선언 <exception_decl>`\한 것이어야 한다.
 Exception의 THEN 절 안의 RAISE는 Exception 이름을 생략할 수 있다.
-이 경우, 현재 처리 중인 Exception을 일으키는 것으로 동작한다.
+이 경우, 현재 처리 중인 Exception을 다시 일으키는 것으로 동작한다.
 
 .. code-block:: sql
 
@@ -403,7 +403,7 @@ RETURN
         ...
     END;
 
-    CREATE OR REPLACE PROCEDURE caller(i INT, o OUT INT)
+    CREATE OR REPLACE PROCEDURE proc(i INT, o OUT INT)
     AS
         v INT;
         c CONSTANT INT := 0;

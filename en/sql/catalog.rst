@@ -12,7 +12,7 @@ You can easily get various schema information from the SQL statement by using th
 
 .. code-block:: sql
 
-    -- Classes that refer to the 'b_user' class
+    -- Classes that refer to the 'db_user' class
     SELECT class_name
     FROM db_attribute
     WHERE domain_class_name = 'db_user';
@@ -53,8 +53,9 @@ Class Name                       Description
 :ref:`-db-auth`                  User authorization information of classes
 :ref:`-db-data-type`             The data type supported by CUBRID
 :ref:`-db-partition`             Partition information
-:ref:`-db-stored-procedure`      Java stored procedure information
-:ref:`-db-stored-procedure-args` Java stored procedure argument information
+:ref:`-db-stored-procedure`      Stored procedure information
+:ref:`-db-stored-procedure-args` Stored procedure argument information
+:ref:`-db-stored-procedure-code` Stored procedure code information
 :ref:`-db-server`                Server information for DBLink
 :ref:`-db-synonym`               Target object information of synonyms
 :ref:`db-user`                   User information
@@ -806,7 +807,6 @@ Represents Stored procedure argument information. An index for sp_of is created.
 Attribute Name       Data Type                   Description
 ==================== =========================== =========================================================
 sp_of                _db_stored_procedure        Stored procedure object
-pkg_name             CHARACTER VARYING(255)      Package name containing the stored procedure
 index_of             INTEGER                     Order of the arguments
 is_system_generated  INTEGER                     Indicates whether the stored procedure is system-generated
 arg_name             CHARACTER VARYING(255)      Argument name
@@ -844,7 +844,7 @@ comment              CHARACTER VARYING(1024)     Comment to describe the argumen
 
             - **is_optional**: A value of **1** indicates the argument is optional, while **0** indicates it is required.
 
-            - **default_value**: The default value of the argument. For more details, refer to :ref:`pl-arg-default-value`.
+            - **default_value**: The default value of the argument. For more details, refer to :ref:`pl-arg-default`.
 
 .. _-db-stored-procedure-code:
 
@@ -874,7 +874,7 @@ ocode                CHARACTER VARYING(1073741823) Object code
                 - A value of **1** indicates that the stored procedure code is loaded only once and changes to the procedure code are not applied until the server restarts.
                 - A value of **0** indicates that the stored procedure code is loaded every time, and changes are applied immediately using DDL or procedure load utilities.
 
-                - Used in :ref:`pl-jni`.
+                - Used in :ref:`jsp-jni`.
 
             - **is_system_generated**: A value of **1** indicates that the code is system-generated, while **0** indicates it is user-written code.
 
@@ -1209,8 +1209,8 @@ Virtual Class Name               Description
 :ref:`db-auth`                   User authorization information of classes
 :ref:`db-trig`                   Trigger information
 :ref:`db-partition`              Partition information
-:ref:`db-stored-procedure`       Java stored procedure information
-:ref:`db-stored-procedure-args`  Java stored procedure argument information
+:ref:`db-stored-procedure`       Stored procedure information
+:ref:`db-stored-procedure-args`  Stored procedure argument information
 :ref:`db-server`                 Server information for DBLink
 :ref:`db-synonym`                Target object information of synonyms
 ================================ ==============================================================================
@@ -2153,7 +2153,7 @@ comment              VARCHAR(1024)               Comment to describe the argumen
 
                 - **is_optional**: A value of **YES** indicates the argument is optional, while **NO** indicates it is required.
 
-                - **default_value**: The default value of the argument. For more details, refer to :ref:`pl-arg-default-value`.
+                - **default_value**: The default value of the argument. For more details, refer to :ref:`pl-arg-default`.
 
 The following example shows how to retrieve arguments the 'process_order' Stored procedure in the order of the arguments.
 

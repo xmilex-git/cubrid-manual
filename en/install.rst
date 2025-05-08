@@ -12,19 +12,19 @@ Supported Platforms and System Requirements
 
 The platforms supported by CUBRID and hardware/software requirements for the installation are as follows:
 
-+---------------------------------------------------------------------+------------------+---------------------+--------------------------------------+
-| Supported Platforms                                                 | Required Memory  | Required Disk Space | Required Software                    |
-+=====================================================================+==================+=====================+======================================+
-| * Windows 64 Bit Windows 7 or higher                                | 1GB or more      | 2GB or more(\*)     | JDK 1.8                              |
-|                                                                     |                  |                     | (Required when Java Stored Procedure |
-| * Linux family 64 Bit(Linux kernel 2.4, glibc 2.3.4 or higher)      |                  |                     | is required)                         |
-+---------------------------------------------------------------------+------------------+---------------------+--------------------------------------+
++---------------------------------------------------------------------+------------------+---------------------+
+| Supported Platforms                                                 | Required Memory  | Required Disk Space |
++=====================================================================+==================+=====================+
+| * Windows 64 Bit Windows 7 or higher                                | 1GB or more      | 2GB or more(\*)     |
+|                                                                     |                  |                     |
+| * Linux family 64 Bit(Linux kernel 2.4, glibc 2.3.4 or higher)      |                  |                     |
++---------------------------------------------------------------------+------------------+---------------------+
 
 (\*): Requires a 500MB of free disk space on the initial installation; requires approximately 1.5GB of free disk space with a database creating with default options.
 
-Beginning with 2008 R4.0, CUBRID Manager Client is not automatically installed when installing the CUBRID package. For this reason, if you require CUBRID Manager you must install it separately. The CUBRID can be downloaded from http://ftp.cubrid.org.
+CUBRID Admin Client is not automatically installed when installing the CUBRID package. For this reason, if you require CUBRID Admin you must install it separately. The CUBRID can be downloaded from http://ftp.cubrid.org.
 
-A variety of drivers such as PHP, ODBC and OLE DB can also be downloaded from http://ftp.cubrid.org.
+A variety of drivers such as JDBC, ODBC and PHP can also be downloaded from http://ftp.cubrid.org.
 
 For more information on the CUBRID engine, tools, and drivers, see https://www.cubrid.org.
 
@@ -41,15 +41,9 @@ Compatibility
 
 *   An application that is developed by using the GLO class can be used after it is converted to an application or schema suitable to the BLOB or CLOB type.
 
-**CUBRID Manager Compatibility**
+**CUBRID Admin Compatibility**
 
-*   CUBRID Manager guarantees backward compatibility with the servers using CUBRID 2008 R2.2 or higher and uses the CUBRID JDBC driver that matches each server version. However, you must use a CUBRID Manager that is higher than CUBRID servers in version in order to utilize all the features of CUBRID Manager. The CUBRID JDBC driver is included in the $CUBRID/jdbc directory when CUBRID is installed($CUBRID on Linux, %CUBRID% on Windows).
-
-*   The bit version of CUBRID Manager must be identical to the bit version of JRE.
-
-    For example, if a 64-bit DB server uses CUBRID Manager 32-bit version, JRE or JDK 32-bit version should be installed.
-
-*   Drivers for 2008 R2.2 and higher versions are included in CUBRID Manager by default, which you can download separately from the https://www.cubrid.org Website.
+*   CUBRID Admin guarantees backward compatibility with the servers using CUBRID 10.0 or higher and uses the CUBRID JDBC driver that matches each server version. However, you must use a CUBRID Admin that is higher than CUBRID servers in version in order to utilize all the features of CUBRID Admin. The CUBRID JDBC driver is included in the $CUBRID/jdbc directory when CUBRID is installed($CUBRID on Linux, %CUBRID% on Windows).
 
 .. note:: Old version users should upgrade all of driver, broker, DB server; Data migration should be done because 11.3 or early version's DB volume is not compatible with 11.4 version.
     For upgrade and data migration, see :doc:`/upgrade`.
@@ -106,11 +100,11 @@ Check the following before installing CUBRID for Linux.
     
 **Installing CUBRID**
 
-The installation program consists of shell scripts that contain binary; thus it can be installed automatically. The following example shows how to install CUBRID with the "CUBRID-11.4.0.????-???????-Linux.x86_64.sh" file on the Linux. 
+The installation program consists of shell scripts that contain binary; thus it can be installed automatically. The following example shows how to install CUBRID with the "CUBRID-11.4.0.1778-13a115a-Linux.x86_64.sh" file on the Linux. 
 
 ::
 
-    $ sh CUBRID-11.4.0.????-???????-Linux.x86_64.sh
+    $ sh CUBRID-11.4.0.1778-13a115a-Linux.x86_64.sh
     Do you agree to the above license terms? (yes or no) : yes
     Do you want to install this software(CUBRID) to the default(/home1/cub_user/CUBRID) directory? (yes or no) [Default: yes] : yes
     Install CUBRID to '/home1/cub_user/CUBRID' ...
@@ -127,7 +121,8 @@ The installation program consists of shell scripts that contain binary; thus it 
     $ . /home1/cub_user/.cubrid.sh
     $ cubrid service start
 
-As shown in the example above, after installing the downloaded file (CUBRID-11.4.0.????-???????-Linux.x86_64.sh), the CUBRID related environment variables must be set in order to use the CUBRID database. Such setting has been made automatically when logging in the concerned terminal. Therefore there is no need to re-set after the first installation. ::
+As shown in the example above, after installing the downloaded file (CUBRID-11.4.0.1778-13a115a-Linux.x86_64.sh), you must run .cubrid.sh (or .cubrid.csh) according to your shell environment to set the environment variables required to use the CUBRID database.
+Additionally, to automatically set these variables upon login, you need to manually register .cubrid.sh (or .cubrid.csh) in a shell startup file such as .bashrc (or .cshrc), depending on your shell environment. ::
 
     $ . /home1/cub_user/.cubrid.sh
 
@@ -158,7 +153,7 @@ When you want to check whether CUBRID Manager server and CUBRID broker works wel
 
 You can install CUBRID by using rpm file that is created on CentOS 6. The way of installing and uninstalling CUBRID is the same as that of using general rpm utility. While CUBRID is being installed, a new system group (cubrid) and a user account (cubrid) are created. After installation is complete, you should log in with a cubrid user account to start a CUBRID service.::
 
-    $ rpm -Uvh CUBRID-11.4.0.????-???????-Linux.x86_64.rpm
+    $ rpm -Uvh CUBRID-11.4.0.1778-13a115a-Linux.x86_64.rpm
 
 When rpm is executed, CUBRID is installed in the "cubrid" home directory (/opt/cubrid) and related configuration file (cubrid.[c]sh) is installed in the /etc/profile.d directory. Note that *demodb* is not automatically installed. Therefore, you must executed /opt/cubrid/demo/make_cubrid_demo.sh with "cubrid" Linux ID. When installation is complete, enter the code below to start CUBRID with "cubrid" Linux ID. ::
 
@@ -213,9 +208,9 @@ A simple description on each driver can be found on :doc:`/api/index`.
 
 **Installing CUBRID Tools**
 
-You can download various tools including CUBRID Manager and CUBRID Migration Toolkit from https://www.cubrid.org/downloads.
+You can download various tools including CUBRID Admin and CUBRID Migration Toolkit from https://www.cubrid.org/downloads.
 
-.. FIXME You can see the latest information on tools such as CUBRID Manager and install them by downloading files from http://www.cubrid.org/downloads.
+.. FIXME You can see the latest information on tools such as CUBRID Admin and install them by downloading files from http://www.cubrid.org/downloads.
 
 .. _Installing-and-Running-on-Windows:
 
@@ -295,7 +290,7 @@ A simple description on each driver can be found on :doc:`/api/index`.
 
 **Installing CUBRID Tools**
 
-You can download various tools including CUBRID Manager and CUBRID Migration Toolkit from https://www.cubrid.org/downloads.
+You can download various tools including CUBRID Admin and CUBRID Migration Toolkit from https://www.cubrid.org/downloads.
 
 .. FIXME: You can see the latest information on tools such as CUBRID Manager and install them by downloading files from `<http://www.cubrid.org/wiki_tools>`_.
 
@@ -346,7 +341,7 @@ Check the following before installing CUBRID for Linux.
 
         ::
         
-            tar xvfz CUBRID-11.4.0.????-???????-Linux.x86_64.tar.gz /home1/cub_user/
+            tar xvfz CUBRID-11.4.0.1778-13a115a-Linux.x86_64.tar.gz /home1/cub_user/
 
         CUBRID directory is created under /home1/cub_user/ and files are created under CUBRID directory. 
 

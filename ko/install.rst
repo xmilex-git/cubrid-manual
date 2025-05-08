@@ -14,19 +14,18 @@
 
 CUBRID가 지원하는 플랫폼과 설치를 위한 하드웨어/소프트웨어 요구 사항은 아래 표와 같다.
 
-+--------------------------------------------------------------+------------------+----------------------+----------------------------+
-| 지원 플랫폼                                                  | 요구되는 메모리  | 요구되는 디스크 공간 | 필요 소프트웨어            |
-+==============================================================+==================+======================+============================+
-| * Windows 64 Bit Windows 7 이상                              | 1G 이상          | 2G 이상(\*)          | Java 저장 프로시저를       |
-|                                                              |                  |                      | 사용하는 경우 JDK 1.8 필요 |
-| * Linux 계열 64 Bit(Linux kernel 2.4 및 glibc 2.3.4 이상)    |                  |                      |                            |
-+--------------------------------------------------------------+------------------+----------------------+----------------------------+
++--------------------------------------------------------------+------------------+----------------------+
+| 지원 플랫폼                                                  | 요구되는 메모리  | 요구되는 디스크 공간 | 
++==============================================================+==================+======================+
+| * Windows 64 Bit Windows 7 이상                              | 1G 이상          | 2G 이상(\*)          |
+| * Linux 계열 64 Bit(Linux kernel 2.4 및 glibc 2.3.4 이상)    |                  |                      |
++--------------------------------------------------------------+------------------+----------------------+
 
 (\*): 처음 설치 시 약 500MB의 디스크 공간이 필요하며, 하나의 DB를 기본 옵션으로 생성할 경우 약 1.5GB의 디스크 공간이 필요하다.
 
-2008 R4.0부터는 CUBRID 패키지 설치 시 CUBRID 매니저 클라이언트가 같이 설치되지 않는다. 따라서 CUBRID 매니저를 사용하려면 이를 추가로 설치해야 한다. CUBRID 설치 패키지는 http://ftp.cubrid.org 에서 받을 수 있다.
+CUBRID 패키지 설치 시 CUBRID Admin 클라이언트가 같이 설치되지 않는다. 따라서 CUBRID Admin 사용하려면 이를 추가로 설치해야 한다. CUBRID 설치 패키지는 http://ftp.cubrid.org 에서 받을 수 있다.
 
-CUBRID 매니저 JDBC, PHP, ODBC, OLE DB 등의 드라이버들도 http://ftp.cubrid.org 에서 받을 수 있다.
+JDBC, ODBC, PHP 등의 드라이버들도 http://ftp.cubrid.org 에서 받을 수 있다.
 
 CUBRID 엔진, 사용 도구 및 드라이버에 대한 자세한 정보는 https://www.cubrid.org 를 참고한다.
 
@@ -43,15 +42,9 @@ CUBRID 엔진, 사용 도구 및 드라이버에 대한 자세한 정보는 http
 
 *   2008 R3.0 이하 버전에서 GLO 클래스를 이용하여 개발된 응용은 BLOB, CLOB 타입에 맞는 응용 및 스키마로 변환하여 사용해야 한다.
 
-**CUBRID 매니저의 호환성**
+**CUBRID Admin의 호환성**
 
-*   CUBRID 매니저는 CUBRID 2008 R2.2 이상 버전의 서버에 대해서 하위 호환성을 보장하며, 각 서버 버전과 일치하는 CUBRID JDBC 드라이버를 사용한다. 하지만 CUBRID 매니저에서 제공하는 모든 기능을 제대로 사용하기 위해서는 CUBRID 서버 버전보다 높은 버전의 CUBRID 매니저를 사용해야 한다. CUBRID JDBC 드라이버는 CUBRID 설치 시 $CUBRID/jdbc 디렉터리에 포함되어 있다(Linux 환경에서 $CUBRID는 Windows 환경에서는 %CUBRID% 형식으로 사용됨).
-
-*   CUBRID 매니저의 Bit 버전과 JRE의 Bit 버전은 서로 동일해야 한다. 
-
-    예를 들어, 64Bit 버전 DB 서버라도 CUBRID Manager 32Bit 버전을 사용한다면 JRE 또는 JDK 32Bit 버전을 설치해야 한다.
-
-*   CUBRID 2008 R2.2 이상 버전의 드라이버는 CUBRID 매니저에 기본으로 내장되어 있으며, https://www.cubrid.org 웹사이트에서 별도로 받을 수도 있다.
+*   CUBRID Admin는 CUBRID 10.0 이상 버전의 서버에 대해서 하위 호환성을 보장하며, 각 서버 버전과 일치하는 CUBRID JDBC 드라이버를 사용한다. 하지만 CUBRID Admin에서 제공하는 모든 기능을 제대로 사용하기 위해서는 CUBRID 서버 버전보다 높은 버전의 CUBRID Admin를 사용해야 한다. CUBRID JDBC 드라이버는 CUBRID 설치 시 $CUBRID/jdbc 디렉터리에 포함되어 있다(Linux 환경에서 $CUBRID는 Windows 환경에서는 %CUBRID% 형식으로 사용됨).
 
 .. note:: 과거 버전 사용자들은 드라이버, 브로커, DB 서버 모두를 반드시 업그레이드해야 하며, 11.3 이하 버전의 DB 볼륨이 11.4와 호환되지 않으므로 반드시 데이터 마이그레이션을 해야 한다.
     업그레이드 및 데이터 마이그레이션은 :doc:`/upgrade`\ 를 참고한다.
@@ -108,11 +101,11 @@ Linux 버전의 CUBRID 데이터베이스를 설치하기 전에 다음 사항�
   
 **CUBRID 설치**
 
-설치 프로그램은 바이너리를 포함한 쉘 스크립트로 되어 있어 자동으로 설치할 수 있다. 다음은 리눅스에서 "CUBRID-11.4.0.????-???????-Linux.x86_64.sh" 파일을 이용하여 CUBRID를 설치하는 예제이다. 
+설치 프로그램은 바이너리를 포함한 쉘 스크립트로 되어 있어 자동으로 설치할 수 있다. 다음은 리눅스에서 "CUBRID-11.4.0.1778-13a115a-Linux.x86_64.sh" 파일을 이용하여 CUBRID를 설치하는 예제이다. 
 
 ::
 
-    $ sh CUBRID-11.4.0.????-???????-Linux.x86_64.sh
+    $ sh CUBRID-11.4.0.1778-13a115a-Linux.x86_64.sh
     Do you agree to the above license terms? (yes or no) : yes
     Do you want to install this software(CUBRID) to the default(/home1/cub_user/CUBRID) directory? (yes or no) [Default: yes] : yes
     Install CUBRID to '/home1/cub_user/CUBRID' ...
@@ -129,7 +122,8 @@ Linux 버전의 CUBRID 데이터베이스를 설치하기 전에 다음 사항�
     $ . /home1/cub_user/.cubrid.sh
     $ cubrid service start
 
-위의 예제와 같이 다운로드한 파일(CUBRID-11.4.0.????-???????-Linux.x86_64.sh)을 설치한 후, CUBRID 데이터베이스를 사용하기 위해서는 CUBRID 관련 환경 정보를 설정해야 한다. 이 설정은 해당 터미널에 로그인할 때 자동 설정되도록 지정되어 있으므로 설치 후 최초 한 번만 수행하면 된다. ::
+위의 예제와 같이 다운로드한 파일(CUBRID-11.4.0.1778-13a115a-Linux.x86_64.sh)을 설치한 후, CUBRID 데이터베이스를 사용하기 위해서는 사용자의 shell 환경에 맞게 .cubrid.sh (또는 .cubrid.csh) 수행하여 CUBRID 관련 환경 변수값을 설정해야 한다. 
+또한, 로그인시 자동 설정하려면 사용자의 shell 환경에 맞게 .cubrid.sh (또는 .cubrid.csh)를 .bashrc (또는 .cshrc) 등에 수동으로 등록해주어야 한다. ::
 
     $ . /home1/cub_user/.cubrid.sh
 
@@ -160,7 +154,7 @@ cubrid service를 구동시킨 후 정상적으로 구동되었는지 확인하�
 
 CentOS 6 환경에서 생성한 RPM 파일을 사용하여 CUBRID를 설치할 수 있으며, 일반적인 RPM 유틸리티와 동일한 방법으로 설치하고 삭제할 수 있다. 설치하면 새로운 시스템 그룹(cubrid) 및 사용자 계정(cubrid)이 생성되며, 설치 후에는 cubrid 사용자 계정으로 로그인하여 CUBRID 서비스를 시작해야 한다. ::
 
-    $ rpm -Uvh CUBRID-11.4.0.????-???????-Linux.x86_64.rpm
+    $ rpm -Uvh CUBRID-11.4.0.1778-13a115a-Linux.x86_64.rpm
 
 RPM을 실행하면 CUBRID는 "cubrid" 홈 디렉터리(/opt/cubrid)에 설치되고, CUBRID 관련 환경 설정 파일(cubrid.[c]sh)이 /etc/profile.d 디렉터리에 설치된다. 단, demodb는 자동으로 설치되지 않으므로 "cubrid" Linux 계정으로 로그인하여 /opt/cubrid/demo/make_cubrid_demo.sh를 실행하여야 한다. CUBRID가 설치 완료되면 "cubrid" Linux 계정으로 로그인하여 CUBRID 서비스를 다음과 같이 시작한다. ::
 
@@ -215,7 +209,7 @@ CCI, JDBC, PHP, ODBC, OLE DB, ADO.NET, Ruby, Python, Node.js 등의 인터페이
     
 **CUBRID 도구 설치**
 
-CUBRID 매니저 등의 도구는 https://www.cubrid.org/downloads 에서 최신 정보를 확인할 수 있고 관련 파일을 내려받아 설치할 수 있다.
+CUBRID Admin, CUBRID Migration ToolKit 등의 도구는 https://www.cubrid.org/downloads 에서 최신 정보를 확인할 수 있고 관련 파일을 내려받아 설치할 수 있다.
 
 .. FIXME CUBRID 웹매니저는 CUBRID 설치 시 같이 설치된다. 자세한 설명은 `CUBRID 웹 매니저 매뉴얼 <http://www.cubrid.org/wiki_tools/entry/cubrid-web-manager-manual>`_\ 을 참고한다.
     
@@ -348,7 +342,7 @@ Linux 버전의 CUBRID 데이터베이스를 설치하기 전에 다음 사항�
 
         ::
         
-            tar xvfz CUBRID-11.4.0.????-???????-Linux.x86_64.tar.gz /home1/cub_user/
+            tar xvfz CUBRID-11.4.0.1778-13a115a-Linux.x86_64.tar.gz /home1/cub_user/
 
         /home1/cub_user/ 이하에 CUBRID 디렉터리가 생기고 그 이하에 파일이 생성된다.
 

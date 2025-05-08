@@ -170,8 +170,8 @@ The **getConnection** method returns the **Connection** object and it is used to
 
         The behavior for each setting is as follows:
 
-        *   **false**: Connect to the hosts in the order listed in the connection URL.
-	*   **true or rr**: Connects to the specified hosts using the **Round-Robin** method.
+        *   **false**: This property is not applied. 
+	    *   **true or rr**: Connects to the specified hosts using the **Round-Robin** method.
         *   **sh**: Connects to the specified hosts using the **Random(Shuffle)** method.  
 
     *   **connectTimeout**: Timeout value (in seconds) for database connection. The default value is 30 seconds. If this value is 0, it means infinite waiting. This value is also applied when internal reconnection occurs after the initial connection. The **DriverManger.setLoginTimeout** () method can be used to configure it; however, the value configured in this method will be ignored if a value is configured in the connection URL.
@@ -1563,7 +1563,7 @@ The following example shows how to execute the **INSERT** statement by connectin
 JDBC API
 ========
 
-For details about JDBC API, see Java API Specification (https://docs.oracle.com/javase/7/docs/api/) and for details about Java, see Java SE Documentation (https://www.oracle.com/technetwork/java/javase/documentation/index.htm).
+For details about JDBC API, see Java API Specification (https://docs.oracle.com/javase/7/docs/api/) and for details about Java, see Java SE Documentation (https://www.oracle.com/java/technologies/javase-documentation.html).
 
 If :ref:`cursor holdability <cursor-holding>` is not configured, a cursor is maintained by default.
 

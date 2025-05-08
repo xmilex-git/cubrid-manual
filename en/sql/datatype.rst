@@ -296,8 +296,10 @@ The **DATE** data type is used to represent the year (yyyy), month (mm) and day 
 
 *   All fields must be entered as integer.
 *   The date value is displayed in the type of 'MM/DD/YYYY' in CSQL, and it is displayed in the type of 'YYYY-MM-DD' in JDBC application programs and the CUBRID Manager.
+*   You can store the date value of the system in the **DATE** type by using the :c:macro:`SYS_DATE`\ (or :c:macro:`SYSDATE`, :c:macro:`CURRENT_DATE`). 
 *   The :func:`TO_DATE` function is used to convert a character string type into a **DATE** type. 
 *   0 is not allowed to input in year, month, and day; however, '0000-00-00', which every digit consisting of year, month, and day is 0, is allowed as an exception.
+*   If the year is two digits and the value is greater than or equal to 70, it is recognized as the 1900s, otherwise it is recognized as the 2000s.
 *   **DEFAULT** constraint can be specified in a column of this type.
 
 ::
@@ -320,6 +322,7 @@ The **TIME** data type is used to represent the hour (hh), minute (mm) and secon
 *   AM/PM time notation is used to display time in the CSQL; while the 24-hour notation is used in the CUBRID Manager.
 *   AM/PM can be specified in the 24-hour notation. An error occurs if the time specified does not follow the AM/PM format.
 *   Every time value is stored in the 24-hour notation. 
+*   You can store the time value of the system in the **TIME** type by using the :c:macro:`SYS_TIME`\ (or :c:macro:`SYSTIME`, :c:macro:`CURRENT_TIME`). 
 *   The :func:`TO_TIME` function is used to return a character string type into a TIME type.
 *   **DEFAULT** constraint can be specified in a column of this type.
 
@@ -963,7 +966,7 @@ IANA Timezone
 
 In IANA(Internet Assigned Numbers Authority) timezone database, there are lots of codes and data which represent the history of localtime for many representative locations around the globe.
 
-This database is periodically updated to reflect changes made by political bodies to time zone boundaries, UTC offsets, and daylight-saving rules. Its management procedure is described in `BCP 175: Procedures for Maintaining the Time Zone Database <https://tools.ietf.org/html/rfc6557>`_. For more details, see http://www.iana.org/time-zones.
+This database is periodically updated to reflect changes made by political bodies to time zone boundaries, UTC offsets, and daylight-saving rules. Its management procedure is described in `BCP 175: Procedures for Maintaining the Time Zone Database <https://datatracker.ietf.org/doc/html/rfc6557>`_. For more details, see http://www.iana.org/time-zones.
 
 CUBRID supports IANA timezone, and a user can use the IANA timezone library in the CUBRID installation package as it is. If you want to update as the recent timezone, update timezone first, compile timezone library, and restart the database. 
 
@@ -1854,11 +1857,11 @@ When you get a **LOB** type column, the data stored in a file to which the colum
 
         * Previously created LOB data cannot be retrieved.
         * To retrieve previously created LOB data, it should be moved to the updated '**lob-base-path**' directory.
+
        ::
 
           # example:
           % cp -r /home1/data1/* /home2/data2
-       ::
 
     *   LOB data created in CUBRID 11.3 or earlier, even though they store the locator as an absolute file path, can be retrieved in CUBRID 11.4 without any changes.
 
@@ -2124,8 +2127,8 @@ LIST/SEQUENCE
 JSON Data Type
 ==============
 
-CUBRID 10.2 adds support for native **JSON** data type, as defined by
-`RFC 7159 <https://tools.ietf.org/html/rfc7159>`__. **JSON** data type
+From CUBRID 10.2, native **JSON** data type is supported as defined by
+`RFC 7159 <https://datatracker.ietf.org/doc/html/rfc7159>`__. **JSON** data type
 offers automatic validation and allows fast access and operations on
 JSON data.
 
@@ -2201,10 +2204,10 @@ the string is not a valid JSON.
   Invalid JSON: 'abc'.
 
 JSON type columns with stricter validation rules can be defined using the
-`draft JSON Schema standard <https://json-schema.org/specification.html>`_.
+`draft JSON Schema standard <https://json-schema.org/specification>`_.
 If you are not familiar with JSON Schema, you may refer to
 `Understanding JSON Schema
-<https://json-schema.org/understanding-json-schema>`_.
+<https://json-schema.org/understanding-json-schema/reference>`_.
 
 A simple example of how schema can be used:
 
@@ -2237,7 +2240,7 @@ JSON Value Types
 
 A JSON value must be an object, an array or a scalar (string, number, boolean
 or null), as defined by `RFC 7159
-<https://tools.ietf.org/html/rfc7159#section-3>`__.
+<https://datatracker.ietf.org/doc/html/rfc7159#section-3>`__.
 
 A table of JSON value types:
 
@@ -2378,7 +2381,7 @@ will be done to UTF-8.
 JSON Pointers
 -------------
 
-JSON Pointers, as defined by https://tools.ietf.org/html/rfc6901 provide an
+JSON Pointers, as defined by https://datatracker.ietf.org/doc/html/rfc6901 provide an
 alternative to JSON paths.
 JSON Pointers, like JSON Paths and JSON text, should be encoded using ASCII
 or UTF-8 character set. If other character sets are used, a coercion will be

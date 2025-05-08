@@ -120,7 +120,12 @@ CREATE PROCEDURE/FUNCTION 문을 실행하면 저장 프로시저/함수의 문�
 Static SQL
 ==================
 
-SQL 구문 중 다음 구문들은 PL/CSQL 실행문으로 직접 사용할 수 있으며, 이를 Static SQL 문이라고 부른다.
+Static SQL은 문자열에 담지 않고 코드 사이에 직접 기술한 SQL문을 말하며, 접근 방식이 미리 정의되는 형태의 SQL으로, 컴파일 시점에 Syntax, Sematics 체크가 가능하다.
+
+유연하지 않다는 단점이 있지만, 컴파일 시점에 접근 방식이 정의되어  최적화되기 때문에 런타임시 접근 방식이 정의되는 Dynamic SQL보다 빠르고 효과적이라는 장점이 있다.
+
+
+PL/CSQL 실행문으로 직접 사용할 수 있는 SQL구문은 다음과 같다
 
 * SELECT (CTE, UNION, INTERSECT, MINUS 포함)
 * INSERT, UPDATE, DELETE, MERGE, REPLACE
@@ -168,13 +173,33 @@ SELECT 문을 :ref:`커서 선언 <cursor_decl>`\이나 :ref:`OPEN-FOR <cursor_m
         ...
     END;
 
-INTO 절을 포함안 SELECT 문의 조회 결과는 한 건의 결과 레코드여야 하며, 두건 이상의 결과를 가져오는 경우는 TOO_MANY_ROWS Exception이 발생한다.
+INTO 절을 포함한 SELECT 문의 조회 결과는 한 건의 결과 레코드여야 하며, 두건 이상의 결과를 가져오는 경우는 TOO_MANY_ROWS Exception이 발생한다.
 결과가 없을 경우에는 NO_DATA_FOUND Exception이 발생한다.
 
 Static SQL 문의 WHERE 절이나 VALUES 절 안에서처럼 값을 필요로 하는 자리에
 PL/CSQL에서 선언한 변수, 상수, 프로시저/함수 인자를 쓸 수 있다.
 단, 이들은 BOOLEAN이나 SYS_REFCURSOR 타입을 가져서는 안된다. :ref:`SQL 데이터타입 <datatype_index>`\이
 이들을 포함하지 않기 때문이다.
+
+Static SQL 중에서 SELECT 문에 대해서는 :ref:`DBLink <dblink-introduction>` 기능이 지원되지만,
+DML (INSERT, UPDATE, DELETE, MERGE, REPLACE) 문에 대해서는 지원되지 않는다.
+DML 문장에서 DBLink 기능을 사용하려면, 아래에서 설명하는 Dynamic SQL 을 사용해야 한다.
+
+.. code-block:: sql
+
+    CREATE OR REPLACE PROCEDURE test_dblink_in_dml
+    AS
+    BEGIN
+        INSERT INTO athlete@remote_svr(name, gender, nation_code, event)
+        VALUES ('Park Taehwan', 'M', 'KOR', 'Swimming');
+    END;
+
+    In line 4, column 8,
+
+    ERROR: Stored procedure compile error: Semantic: before '
+           VALUES ('Park Taehwan', 'M', 'KOR', 'Swimming')'
+    DBLink DML is not yet supported for PL/CSQL Static SQL.
+
 
 다음은 Static SQL 사용 예이다.
 
@@ -227,8 +252,8 @@ Static SQL 실행 중에 에러가 나면 SQL_ERROR Exception이 발생한다.
 Dynamic SQL
 ==================
 
-Dynamic SQL은 실행 시간에 SQL 구문에 해당하는 문자열을 만들어
-:ref:`EXECUTE IMMEDIATE <exec_imme>` 문으로 실행하는 방식이다.
+Dynamic 문자열에 담아서 기술하는 SQL문을 말하며, 실행 시간에 SQL 구문에 해당하는 문자열을 만들어 :ref:`EXECUTE IMMEDIATE <exec_imme>` 문으로 실행하는 방식이다.
+
 Dynamic SQL은 주로 다음 두 가지 경우에 필요하다.
 
 * 실행하려는 SQL 구문을 프로그램 작성 시에 결정하는 것이 어렵거나 불가능한 경우
@@ -289,55 +314,93 @@ Static/Dynamic SQL 밖의 PL/CSQL 문장에서 아래 표의 단어들을 변수
 Static/Dynamic SQL 안에서는 아래 목록이 아니라 일반 SQL 문에 적용되는
 :ref:`CUBRID 예약어 목록 <reserved_words>`\이 적용된다.
 
-+---------------------------------------------------------------------------------------+
-|   ADDDATE AND AS AUTHID AUTONOMOUS_TRANSACTION                                        |
-+---------------------------------------------------------------------------------------+
-|   BEGIN BETWEEN BIGINT BOOLEAN BOTH BY                                                |
-+---------------------------------------------------------------------------------------+
-|   CALLER CASE CAST CHAR CHARACTER CHR CLOSE COMMENT COMMIT CONSTANT CONTINUE CREATE   |
-|   CURRENT_USER CURSOR                                                                 |
-+---------------------------------------------------------------------------------------+
-|   DATE DATETIME DATETIMELTZ DATETIMETZ DATE_ADD DATE_SUB DAY DAY_HOUR DAY_MILLISECOND |
-|   DAY_MINUTE DAY_SECOND DBMS_OUTPUT DEC DECIMAL DECLARE DEFAULT DEFINER DELETE        |
-|   DETERMINISTIC DIV DOUBLE                                                            |
-+---------------------------------------------------------------------------------------+
-|   ELSE ELSIF END ESCAPE EXCEPTION EXECUTE EXIT EXTRACT                                |
-+---------------------------------------------------------------------------------------+
-|   FALSE FETCH FLOAT FOR FROM FUNCTION                                                 |
-+---------------------------------------------------------------------------------------+
-|   HOUR HOUR_MILLISECOND HOUR_MINUTE HOUR_SECOND                                       |
-+---------------------------------------------------------------------------------------+
-|   IF IMMEDIATE IN INOUT INSERT INT INTEGER INTERNAL INTO IS ISO88591                  |
-+---------------------------------------------------------------------------------------+
-|   LANGUAGE LEADING LIKE LIST LOOP                                                     |
-+---------------------------------------------------------------------------------------+
-|   MERGE MILLISECOND MINUTE MINUTE_MILLISECOND MINUTE_SECOND MOD MONTH MULTISET        |
-+---------------------------------------------------------------------------------------+
-|   NOT NULL NUMERIC                                                                    |
-+---------------------------------------------------------------------------------------+
-|   OF OPEN OR OUT OWNER                                                                |
-+---------------------------------------------------------------------------------------+
-|   PLCSQL POSITION PRAGMA PRECISION PROCEDURE                                          |
-+---------------------------------------------------------------------------------------+
-|   QUARTER                                                                             |
-+---------------------------------------------------------------------------------------+
-|   RAISE RAISE_APPLICATION_ERROR REAL REPLACE RETURN REVERSE ROLLBACK                  |
-+---------------------------------------------------------------------------------------+
-|   SECOND SECOND_MILLISECOND SEQUENCE SELECT SET SETEQ SETNEQ SHORT SMALLINT SQL       |
-|   SQLCODE SQLERRM STRING SUBDATE SUBSET SUBSETEQ SUPERSET SUPERSETEQ SYS_REFCURSOR    |
-+---------------------------------------------------------------------------------------+
-|   THEN TIME TIMESTAMP TIMESTAMPLTZ TIMESTAMPTZ TRAILING TRIM TRUE TRUNCATE            |
-+---------------------------------------------------------------------------------------+
-|   UPDATE USING UTF8                                                                   |
-+---------------------------------------------------------------------------------------+
-|   VARCHAR VARYING                                                                     |
-+---------------------------------------------------------------------------------------+
-|   WEEK WHEN WHILE WITH WORK                                                           |
-+---------------------------------------------------------------------------------------+
-|   XOR                                                                                 |
-+---------------------------------------------------------------------------------------+
-|   YEAR YEAR_MONTH                                                                     |
-+---------------------------------------------------------------------------------------+
++-------------------+--------------------+--------------------+--------------------+
+| ADDDATE           | AND                | AS                 | AUTHID             |
++-------------------+--------------------+--------------------+--------------------+
+| AUTONOMOUS_TRANSACTION                 |                    |                    |
++-------------------+--------------------+--------------------+--------------------+
+| BEGIN             | BETWEEN            | BIGINT             | BOOLEAN            |
++-------------------+--------------------+--------------------+--------------------+
+| BOTH              | BY                 |                    |                    |
++-------------------+--------------------+--------------------+--------------------+
+| CALLER            | CASE               | CAST               | CHAR               |
++-------------------+--------------------+--------------------+--------------------+
+| CHARACTER         | CHR                | CLOSE              | COMMENT            |
++-------------------+--------------------+--------------------+--------------------+
+| COMMIT            | CONSTANT           | CONTINUE           | CREATE             |
++-------------------+--------------------+--------------------+--------------------+
+| CURRENT_USER      | CURSOR             |                    |                    |
++-------------------+--------------------+--------------------+--------------------+
+| DATE              | DATETIME           | DATETIMELTZ        | DATETIMETZ         |
++-------------------+--------------------+--------------------+--------------------+
+| DATE_ADD          | DATE_SUB           | DAY                | DAY_HOUR           |
++-------------------+--------------------+--------------------+--------------------+
+| DAY_MILLISECOND   | DAY_MINUTE         | DAY_SECOND         | DBMS_OUTPUT        |
++-------------------+--------------------+--------------------+--------------------+
+| DEC               | DECIMAL            | DECLARE            | DEFAULT            |
++-------------------+--------------------+--------------------+--------------------+
+| DEFINER           | DELETE             | DETERMINISTIC      | DIV                |
++-------------------+--------------------+--------------------+--------------------+
+| DOUBLE            |                    |                    |                    |
++-------------------+--------------------+--------------------+--------------------+
+| ELSE              | ELSIF              | END                | ESCAPE             |
++-------------------+--------------------+--------------------+--------------------+
+| EXCEPTION         | EXECUTE            | EXIT               | EXTRACT            |
++-------------------+--------------------+--------------------+--------------------+
+| FALSE             | FETCH              | FLOAT              | FOR                |
++-------------------+--------------------+--------------------+--------------------+
+| FROM              | FUNCTION           |                    |                    |
++-------------------+--------------------+--------------------+--------------------+
+| HOUR              | HOUR_MILLISECOND   | HOUR_MINUTE        | HOUR_SECOND        |
++-------------------+--------------------+--------------------+--------------------+
+| IF                | IMMEDIATE          | IN                 | INOUT              |
++-------------------+--------------------+--------------------+--------------------+
+| INSERT            | INT                | INTEGER            | INTERNAL           |
++-------------------+--------------------+--------------------+--------------------+
+| INTO              | IS                 | ISO88591           | LANGUAGE           |
++-------------------+--------------------+--------------------+--------------------+
+| LEADING           | LIKE               | LIST               | LOOP               |
++-------------------+--------------------+--------------------+--------------------+
+| MERGE             | MILLISECOND        | MINUTE             | MINUTE_MILLISECOND |
++-------------------+--------------------+--------------------+--------------------+
+| MINUTE_SECOND     | MOD                | MONTH              | MULTISET           |
++-------------------+--------------------+--------------------+--------------------+
+| NOT               | NULL               | NUMERIC            |                    |
++-------------------+--------------------+--------------------+--------------------+
+| OF                | OPEN               | OR                 | OUT                |
++-------------------+--------------------+--------------------+--------------------+
+| OWNER             |                    |                    |                    |
++-------------------+--------------------+--------------------+--------------------+
+| PLCSQL            | POSITION           | PRAGMA             | PRECISION          |
++-------------------+--------------------+--------------------+--------------------+
+| PROCEDURE         |                    |                    |                    |
++-------------------+--------------------+--------------------+--------------------+
+| QUARTER           |                    |                    |                    |
++-------------------+--------------------+--------------------+--------------------+
+| RAISE             | REAL               | REPLACE            | RETURN             |
++-------------------+--------------------+--------------------+--------------------+
+| REVERSE           | ROLLBACK           | RAISE_APPLICATION_ERROR                 |
++-------------------+--------------------+--------------------+--------------------+
+| SECOND            | SECOND_MILLISECOND | SEQUENCE           | SELECT             |
++-------------------+--------------------+--------------------+--------------------+
+| SECOND_MILLISECOND| SEQUENCE           | SELECT             | SET                |
++-------------------+--------------------+--------------------+--------------------+
+| SETEQ             | SETNEQ             | SHORT              | SMALLINT           |
++-------------------+--------------------+--------------------+--------------------+
+| SQL               | SQLCODE            | SQLERRM            | STRING             |
++-------------------+--------------------+--------------------+--------------------+
+| SUBDATE           | SUBSET             | SUBSETEQ           | SUPERSET           |
++-------------------+--------------------+--------------------+--------------------+
+| SUPERSETEQ        | SYS_REFCURSOR      |                    |                    |
++-------------------+--------------------+--------------------+--------------------+
+| THEN              | TIME               | TIMESTAMP          | TIMESTAMPLTZ       |
++-------------------+--------------------+--------------------+--------------------+
+| TIMESTAMPTZ       | TRAILING           | TRIM               | TRUE               |
++-------------------+--------------------+--------------------+--------------------+
+| TRUNCATE          |                    |                    |                    |
++-------------------+--------------------+--------------------+--------------------+
+| UPDATE            | USING              | UTF8               |                    |
++-------------------+--------------------+--------------------+--------------------+
 
 PL/CSQL 저장 프로시저/함수를 생성하는 CREATE PROCEDURE/FUNCTION 문은 일반 SQL 문법 검사 과정이 아닌, 별도로 구현된 PL/CSQL 문법 검사 과정을 거치며, 예약어 목록도 별개의 것이 적용된다.
 단, AS/IS 키워드까지는 일반 문법 검사 과정도 함께 거치기 때문에 일반 SQL에 적용되는
@@ -346,10 +409,10 @@ PL/CSQL 저장 프로시저/함수를 생성하는 CREATE PROCEDURE/FUNCTION 문
 
 .. code-block:: sql
 
-    csql> CREATE OR REPLACE PROCEDURE test_cubrid_reserved_word(add INT) AS
-    csql> BEGIN
-    csql>     NULL;
-    csql> END;
+    CREATE OR REPLACE PROCEDURE test_cubrid_reserved_word(add INT) AS
+    BEGIN
+       NULL;
+    END;
 
     ERROR: invalid create procedure
       ... ...
@@ -494,7 +557,7 @@ r의 값은 필드 a, b, c를 갖는 레코드가 되고 r.a, r.b, r.c는 각각
 
     create table tblA(a INT, b CHAR, c VARCHAR);
     create table tblB(a INT, b CHAR, c VARCHAR);        -- tblA%ROWTYPE과 tblB%ROWTYPE은 동일 타입
-    create table tblB(aa INT, bb CHAR, cc VARCHAR);     -- tblA%ROWTYPE과 tblC%ROWTYPE은 동일 타입 아님
+    create table tblC(aa INT, bb CHAR, cc VARCHAR);     -- tblA%ROWTYPE과 tblC%ROWTYPE은 동일 타입 아님
 
     CREATE OR REPLACE PROCEDURE test_record_equality AS
         r1 tblA%ROWTYPE;
@@ -594,7 +657,7 @@ Static SQL UPDATE 문에도 다음과 같이 'SET ROW = <record>' 구문을 사�
 정밀도와 스케일 지정 예외
 ==============================
 
-:ref:`PL/CSQL에서 지원하는 데이터 타입 <datatype_index>` 중에 NUMERIC은 정밀도와 스케일을,
+:ref:`PL/CSQL에서 지원하는 데이터 타입 <types>` 중에 NUMERIC은 정밀도와 스케일을,
 CHAR와 VARCHAR는 길이를 지정할 수 있다.
 그러나, 저장 프로시저/함수의 인자 타입과 리턴 타입에는 정밀도와 스케일 지정이 허용되지 않는다.
 내부 프로시저/함수에서도 마찬가지이다.
@@ -786,11 +849,11 @@ Exception의 종류를 식별하는데 사용할 수 있다.
 
 CSQL에서 athlete 테이블에 존재하지 않는 이름을 인자로 주어 NO_DATA_FOUND Exception을 일으켰을 때 결과는 다음과 같다.
 
-.. code-block::
+.. code-block:: sql
 
-    select athlete_code('x');
+   select athlete_code('x');
 
-   In line 1, column 22,
+   In the command from line 1,
 
    ERROR: Stored procedure execute error:
      (line 6, column 5) no data found
@@ -798,7 +861,7 @@ CSQL에서 athlete 테이블에 존재하지 않는 이름을 인자로 주어 N
 
    0 command(s) successfully processed.
 
-위에서 위치 (1, 22)는 SELECT 문 안에서의 위치를 나타내고, (6, 5)는 athlete_code()를 선언한 CREATE 문 안에서의
+위에서 위치 1은 SELECT 문 안에서의 위치를 나타내고, (6, 5)는 athlete_code()를 선언한 CREATE 문 안에서의
 위치를 나타낸다.
 
 시스템 설정 적용
@@ -806,7 +869,7 @@ CSQL에서 athlete 테이블에 존재하지 않는 이름을 인자로 주어 N
 
 Static/Dynamic SQL 문의 동작은 :ref:`시스템 설정 파라미터 <system_config>` 전체의 영향을 동일하게 받는다.
 
-Static/Dynamic SQL 제외한 PL/CSQL 문에서는 다음 4개 시스템 설정 파라미터만이 유효하다.
+Static/Dynamic SQL 밖의 PL/CSQL 문에서는 다음 4개 시스템 설정 파라미터만이 유효하다.
 
 * compat_numeric_division_scale
 * oracle_compat_number_behavior
@@ -834,7 +897,7 @@ Static/Dynamic SQL 제외한 PL/CSQL 문에서는 다음 4개 시스템 설정 �
 
 이들 설정의 자세한 의미는 :ref:`시스템 설정 파라미터 <system_config>`\를 참조할 수 있다.
 
-위 4개 외 다른 설정은 Static/Dynamic SQL 제외한 PL/CSQL 문에서 유효하지 않다. 특히,
+위 4개 외 다른 설정은 Static/Dynamic SQL 밖의 PL/CSQL 문에서 유효하지 않다. 특히,
 
 * no_backslash_escapes 설정 파라미터값과 상관없이 backslash 문자는 escape 문자로 사용되지 않는다.
 * pipes_as_concat 설정 파라미터값과 상관없이 ||는 논리합(OR) 연산자로 사용되지 않는다.
